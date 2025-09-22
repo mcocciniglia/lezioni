@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Resoconto laboratorio — 22/09/2025</title>
+<style>
+  :root{--fg:#222;--bg:#fff;--muted:#666;--brand:#1f6feb;}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5;color:var(--fg);background:var(--bg);margin:0;padding:3rem 1rem;}
+  main{max-width:900px;margin:0 auto;}
+  h1,h2,h3{line-height:1.2;margin:0.6em 0 0.3em}
+  h1{font-size:1.8rem}
+  h2{font-size:1.35rem;margin-top:1.2rem}
+  h3{font-size:1.1rem}
+  p,li{font-size:1rem}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;background:#f6f8fa;border:1px solid #eaecef;border-radius:4px;padding:0 .25em}
+  pre{background:#0f172a;color:#e5e7eb;border-radius:8px;padding:16px;overflow:auto;border:1px solid #0b1220}
+  pre code{background:transparent;border:none;padding:0;color:inherit}
+  .note{border-left:4px solid var(--brand);background:#f0f7ff;padding:.75rem 1rem;border-radius:6px;margin:.75rem 0}
+  .muted{color:var(--muted)}
+  .check{color:#0a7f2e;font-weight:600}
+  ul{margin:.4rem 0 .8rem 1.2rem}
+  ol{margin:.4rem 0 .8rem 1.2rem}
+  footer{margin-top:2rem;font-size:.9rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Resoconto del laboratorio — 22/09/2025</h1>
+  <p class="muted">Prof. Marco Cocciniglia — Sintesi di quanto svolto oggi a lezione.</p>
+
+  <h2>1) Punto di partenza</h2>
+  <p>Abbiamo scaricato e usato un <strong>progetto Maven</strong> preparato dal docente e creato con <strong>JDK 17</strong>.</p>
+
+  <h2>2) Il problema riscontrato</h2>
+  <p>In laboratorio era installato solo <strong>JDK 11</strong> e non avevamo i permessi per aggiornare. Risultato: il progetto, così com’era, non compilava.</p>
+
+  <h2>3) Le due opzioni possibili</h2>
+  <ul>
+    <li><strong>Opzione A — Installare JDK 17</strong>: soluzione ideale, ma <em>non possibile</em> senza permessi.</li>
+    <li><strong>Opzione B — Retarget a Java 11</strong>: <em>abbassare</em> la versione di compilazione del progetto a 11.</li>
+  </ul>
+
+  <div class="note">
+    <strong>Perché serve toccare il POM?</strong><br>
+    Con i progetti <strong>Maven</strong> la versione del linguaggio/bytecode è decisa dal file <code>pom.xml</code> (<em>non</em> solo dalle impostazioni dell’IDE).<br>
+    Se il POM chiede <code>release 17</code> ma la macchina ha JDK 11, Maven segnala l’errore “<em>release version 17 not supported</em>”.
+  </div>
+
+  <h2>4) Cosa abbiamo fatto (retarget a 11)</h2>
+  <p>Abbiamo modificato il <code>pom.xml</code> per compilare verso <strong>Java 11</strong>. Ecco il cambiamento minimo:</p>
+  <pre><code>&lt;properties&gt;
+  &lt;maven.compiler.release&gt;11&lt;/maven.compiler.release&gt;
+  &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+&lt;/properties&gt;
+</code></pre>
+
+  <p>Per essere più espliciti e allineare il plugin del compilatore, si può (consigliato) aggiungere anche:</p>
+  <pre><code>&lt;build&gt;
+  &lt;plugins&gt;
+    &lt;plugin&gt;
+      &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+      &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+      &lt;version&gt;3.11.0&lt;/version&gt;
+      &lt;configuration&gt;
+        &lt;release&gt;11&lt;/release&gt;
+      &lt;/configuration&gt;
+    &lt;/plugin&gt;
+  &lt;/plugins&gt;
+&lt;/build&gt;
+</code></pre>
+
+  <div class="note">
+    <strong>Conseguenze del retarget</strong><br>
+    Dal momento che ora il progetto è “Java 11”, non possiamo usare funzionalità introdotte dopo l’11 (esempi: <em>switch expressions</em>, <em>text blocks</em>, <em>records</em>, <em>sealed classes</em>). In caso compaiano nel codice, vanno riscritte o rimosse.
+  </div>
+
+  <h2>5) Import del progetto e verifica</h2>
+  <ol>
+    <li><strong>Import</strong> in IDE (NetBeans/Eclipse) come progetto Maven dalla cartella con il <code>pom.xml</code>.</li>
+    <li>Selezione della <strong>piattaforma JDK 11</strong> nell’IDE (Project Properties / Installed JREs / Project SDK).</li>
+    <li><strong>Reload/Update</strong> del progetto Maven, quindi <em>Clean &amp; Build</em> o <em>Run</em>.</li>
+  </ol>
+  <p class="check">Esito: i progetti hanno compilato ed eseguito correttamente con JDK 11.</p>
+
+  <h2>6) Ripasso veloce: IDE &amp; Project Explorer</h2>
+  <ul>
+    <li><strong>IDE</strong>: ambiente integrato che ci aiuta a scrivere, compilare, eseguire e fare debug.</li>
+    <li><strong>Project Explorer</strong>: pannello che mostra cartelle, file e struttura Maven (<code>src/main/java</code>, <code>src/test/java</code>, ecc.).</li>
+    <li>In Eclipse: <em>Window → Show View → Project Explorer</em> (o <em>Reset Perspective</em> per ripristinare il layout).</li>
+  </ul>
+
+  <h2>7) Paradigma e regole base di Java</h2>
+  <ul>
+    <li>Java è <strong>orientato agli oggetti</strong>: progettiamo con classi, oggetti, metodi.</li>
+    <li>Il programma parte dal metodo <code>public static void main(String[] args)</code>.</li>
+    <li><strong>Una classe <code>public</code> per file</strong> e il file deve chiamarsi come la classe (es. <code>App.java</code> contiene <code>public class App</code>).</li>
+    <li>La cartella deve rispecchiare il <strong>package</strong> (es. <code>it.scuola...base.es01_hello</code> → cartelle con lo stesso percorso).</li>
+  </ul>
+
+  <h2>8) Cosa portate a casa da oggi</h2>
+  <ul>
+    <li>Capire che la <strong>versione Java</strong> è parte della configurazione di progetto (POM).</li>
+    <li>Saper <strong>retargettare</strong> un progetto Maven a una versione inferiore quando l’ambiente non è aggiornabile.</li>
+    <li>Importare, compilare ed eseguire un progetto Maven in un IDE scolastico.</li>
+  </ul>
+
+  <footer>
+    Preparato il 22/09/2025. Se qualcosa non torna, segnalatelo sul compito in Classroom allegando eventualmente uno screenshot dell’errore.
+  </footer>
+</main>
+</body>
+</html>
