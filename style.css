@@ -1,0 +1,123 @@
+/* ====== Theme variables (Dark) ====== */
+:root {
+--bg: #0f172a;          /* slate-900 */
+--panel: #111827;       /* gray-900 */
+--card: #0b1220;        /* deep panel */
+--accent: #38bdf8;      /* sky-400 */
+--accent-2: #22d3ee;    /* cyan-400 */
+--text: #e5e7eb;        /* gray-200 */
+--muted: #94a3b8;       /* slate-400 */
+--ok: #10b981;          /* emerald-500 */
+--warn: #f59e0b;        /* amber-500 */
+--bad: #ef4444;         /* red-500 */
+--radius: 18px;
+--shadow: 0 12px 30px rgba(0,0,0,.35);
+
+/* blocchi di codice */
+--code-bg: #1e293b;     /* slate-800, leggibile in dark */
+--code-border: rgba(148,163,184,.25);
+}
+
+/* ====== Base ====== */
+
+* { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+  margin: 0; padding: 0;
+  background-color: var(--bg);
+  background-image: radial-gradient(1200px 800px at 10% 0%, #0a1222 0%, var(--bg) 45%, #0a0f1c 100%);
+  background-attachment: fixed;
+  color: var(--text);
+  font: 16px/1.6 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+  }
+
+.container { max-width: 980px; margin: 0 auto; padding: 24px; }
+
+.header {
+background: linear-gradient(135deg, rgba(56,189,248,.10), rgba(34,211,238,.04));
+border-bottom: 1px solid rgba(148,163,184,.2);
+}
+.hero { padding: 40px 0 24px; text-align: center; }
+.badge { display: inline-block; padding: 6px 12px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; border: 1px solid rgba(148,163,184,.35); border-radius: 999px; color: var(--muted); }
+.title { font-size: clamp(28px, 4vw, 44px); margin: 12px 0 8px; letter-spacing: -.02em; }
+.subtitle { color: var(--muted); font-size: clamp(14px, 2.2vw, 18px); }
+
+.main { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 20px; }
+.section { background: var(--card); border: 1px solid rgba(148,163,184,.15); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.section > .section-inner { padding: 20px 22px; }
+.section h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: .2px; }
+.section p { margin: 10px 0; }
+.interleave{
+  width:100%;
+  border-collapse:collapse;
+  margin:12px 0;
+  font-family: ui-monospace, monospace;
+  font-size:14px;
+}
+.interleave th, .interleave td{
+  border:1px solid rgba(148,163,184,.25);
+  padding:6px 10px;
+  text-align:center;
+  white-space:nowrap;
+}
+.interleave th:first-child, .interleave td:first-child{
+  text-align:left;
+  width:72px;
+}
+.interleave caption{
+  caption-side: top;
+  text-align:left;
+  margin-bottom:6px;
+  color: var(--muted);
+}
+
+ul { margin: 8px 0 8px 20px; }
+li { margin: 6px 0; }
+
+.callout { border-left: 4px solid var(--accent); background: rgba(56,189,248,.08); padding: 12px 14px; border-radius: 12px; }
+.callout.ok { border-left-color: var(--ok); background: rgba(16,185,129,.12); }
+.callout.warn { border-left-color: var(--warn); background: rgba(245,158,11,.12); }
+.callout.bad { border-left-color: var(--bad); background: rgba(239,68,68,.12); }
+
+.code, pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+pre { margin: 12px 0; padding: 14px; background: var(--code-bg); border: 1px solid var(--code-border); border-radius: 14px; overflow: auto; color: var(--text); }
+code { background: rgba(148,163,184,.18); padding: 0 6px; border-radius: 8px; }
+
+.kbd { display: inline-block; border: 1px solid rgba(148,163,184,.35); border-bottom-width: 3px; padding: 2px 6px; border-radius: 8px; font-weight: 600; font-size: 12px; }
+
+.footer { color: var(--muted); text-align: center; padding: 24px; font-size: 13px; }
+
+/* Responsive */
+@media (min-width: 880px) {
+.main { grid-template-columns: 1fr 1fr; }
+.wide { grid-column: 1 / -1; }
+}
+
+/* ===== Print Mode ===== */
+@media print {
+body { background:#fff !important; color:#000 !important; }
+.section { box-shadow:none !important; border-color:#ddd !important; background:#fff !important; }
+pre { background:#f6f8fa !important; border-color:#ddd !important; color:#000 !important; }
+code { background:#f0f0f0 !important; color:#000 !important; }
+.header { background:#fff !important; border:none !important; }
+}
+/* Niente sfondo per <code> dentro <pre> (blocchi) */
+pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  display: block;        /* occupa l’intero blocco */
+  color: var(--code-text, #f1f5f9);
+}
+
+/* Mantieni lo sfondo solo per il codice INLINE nel testo */
+:not(pre) > code {
+  background: rgba(148,163,184,.18);
+  padding: 0 6px;
+  border-radius: 8px;
+}
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  color: var(--code-text, #f1f5f9);
+}
