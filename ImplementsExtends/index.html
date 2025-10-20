@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Java Multithreading – Runnable vs Thread + Race Condition (es03)</title>
+
+  <!-- Asset comuni -->
+  <link rel="stylesheet" href="https://mcocciniglia.github.io/common/assets/style.css">
+  <link rel="stylesheet" href="https://mcocciniglia.github.io/common/assets/theme.css">
+  <script defer src="https://mcocciniglia.github.io/common/assets/theme.js"></script>
+  <link rel="icon" href="https://mcocciniglia.github.io/common/assets/favicon.svg" type="image/svg+xml" />
+
+  <style>
+    /* Fix layout e pulsanti */
+    details, summary, .page-header, .container, .site-footer {
+      background: transparent !important;
+    }
+    pre, code { background: var(--code-bg, transparent); }
+    .theme-controls { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
+    .btn-theme, .btn-contrast { border-radius: 9999px; padding: .6rem 1rem; }
+  </style>
+</head>
+
+<body>
+  <header class="page-header">
+    <div class="header-inner">
+      <h1 class="title">Java Multithreading – <code>Runnable</code> vs <code>Thread</code></h1>
+
+      <!-- Controlli tema / contrasto -->
+      <div class="theme-controls">
+        <button id="themeToggle" class="btn btn-theme" type="button" aria-pressed="false" aria-label="Cambia tema">
+          <span class="btn-label">Tema scuro 🌙</span>
+        </button>
+        <button id="contrastToggle" class="btn btn-outline btn-contrast" type="button"
+                aria-pressed="false" aria-label="Attiva/disattiva contrasto alto">
+          Contrasto alto ☀️
+        </button>
+      </div>
+    </div>
+
+    <p class="pill">⏱️ 1 ora • Classe: 4ª IT • Modalità: laboratorio</p>
+  </header>
+
+  <main class="container">
+    <section class="callout">
+      <h2>Obiettivo della lezione</h2>
+      <p>Capire i due modi principali per creare thread in Java (<em>implementando</em> <code>Runnable</code> o <em>estendendo</em> <code>Thread</code>)
+         e osservare una <strong>race condition</strong> con un esempio pratico (es03).</p>
+    </section>
+
+    <section>
+      <h2>Due approcci per i thread</h2>
+      <div class="grid two">
+        <div class="card">
+          <h3>Implements <code>Runnable</code></h3>
+          <ul>
+            <li>Separazione tra <em>compito</em> (runnable) e <em>thread</em> (esecutore).</li>
+            <li>Utile quando la classe deve già <strong>estendere un’altra classe</strong>.</li>
+            <li>Più flessibile e testabile.</li>
+          </ul>
+<pre><code class="language-java">class Worker implements Runnable {
+  public void run() {
+    // lavoro
+  }
+}
+Thread t = new Thread(new Worker());
+t.start();</code></pre>
+        </div>
+
+        <div class="card">
+          <h3>Extends <code>Thread</code></h3>
+          <ul>
+            <li>La logica è <em>dentro</em> il thread.</li>
+            <li>Meno flessibile (ereditarietà già usata).</li>
+            <li>Comodo per esempi rapidi.</li>
+          </ul>
+<pre><code class="language-java">class MyThread extends Thread {
+  public void run() {
+    // lavoro
+  }
+}
+Thread t = new MyThread();
+t.start();</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Race Condition – codice distribuito agli studenti (es03)</h2>
+
+      <details open>
+        <summary><strong>Package &amp; import</strong></summary>
+<pre><code class="language-java">package it.scuola.vaccarini._202526._4ai.threading.es03;
+
+import java.util.Random;</code></pre>
+        <p><strong>package</strong>: organizza le classi nel progetto.<br>
+           <strong>import</strong>: usa <code>Random</code> per riempire l’array con numeri.</p>
+      </details>
+
+      <details open>
+        <summary><strong>Javadoc introduttivo</strong></summary>
+<pre><code class="language-java">/**
+ * Dimostrazione di RACE CONDITION: più thread aggiornano la stessa variabile condivisa (non protetta).
+ * Esegui più volte: spesso il risultato è diverso e sbagliato.
+ *
+ * Uso (facoltativo):
+ *   args[0] = N elementi (default 2_000_000)
+ *   args[1] = numero thread (default 4)
+ *   args[2] = "yield" oppure "sleep" per accentuare l'interleaving (default: nessuno)
+ */</code></pre>
+        <p>La <em>race condition</em> compare quando più thread accedono/aggiornano una <strong>stessa variabile</strong> senza sincronizzazione.</p>
+      </details>
+
+      <details open>
+        <summary><strong>Classe e generazione dati</strong></summary>
+<pre><code class="language-java">public class RaceSumBroken {
+
+    static long[] makeArray(int n) {
+        Random r = new Random(0);
+        long[] a = new long[n];
+        for (int i = 0; i &lt; n; i++) a[i] = r.nextInt(100);
+        return a;
+    }</code></pre>
+        <ul>
+          <li><code>RaceSumBroken</code>: classe “di demo”.</li>
+          <li><code>makeArray</code>: crea un array di <code>n</code> elementi con valori 0..99 (seed fisso <code>0</code> ⇒ ripetibile).</li>
+        </ul>
+      </details>
+
+      <details open>
+        <summary><strong>Somma corretta monothread</strong></summary>
+<pre><code class="language-java">    static long sumMono(long[] a) {
+        long s = 0;
+        for (long v : a) s += v;
+        return s;
+    }</code></pre>
+        <p>Versione di riferimento: un solo thread, nessuna concorrenza ⇒ risultato sempre corretto.</p>
+      </details>
+
+      <details open>
+        <summary><strong>Somma concorrente <em>sbagliata</em></strong></summary>
+<pre><code class="language-java">    static long sumBroken(long[] a, int threads, String spice) throws InterruptedException {
+        final long[] total = new long[]{0}; // variabile condivisa NON protetta
+        Thread[] ths = new Thread[threads];
+        int n = a.length;
+        int block = (n + threads - 1) / threads;
+
+        for (int t = 0; t &lt; threads; t++) {
+            final int start = t * block;
+            final int end = Math.min(n, start + block);
+
+            ths[t] = new Thread(() -&gt; {
+                for (int i = start; i &lt; end; i++) {
+                    total[0] += a[i]; // &lt;-- RACE CONDITION
+                    if (spice != null) {
+                        if ("yield".equalsIgnoreCase(spice) &amp;&amp; (i &amp; 0x3FFF) == 0) {
+                            Thread.yield();
+                        } else if ("sleep".equalsIgnoreCase(spice) &amp;&amp; (i &amp; 0x3FFF) == 0) {
+                            try { Thread.sleep(1); } catch (InterruptedException ignored) {}
+                        }
+                    }
+                }
+            }, "W" + t);
+            ths[t].start();
+        }
+        for (Thread th : ths) th.join();
+        return total[0];
+    }</code></pre>
+        <ul>
+          <li><code>total</code>: array a 1 cella per cattura in lambda. <strong>Non sincronizzato</strong>.</li>
+          <li>Partizionamento: ogni thread elabora un blocco <code>[start, end)</code>.</li>
+          <li><code>total[0] += a[i]</code>: <strong>sezione critica non protetta</strong> ⇒ perdite di incrementi.</li>
+          <li><code>spice</code>: opzionale per aumentare l’interleaving:
+            <ul>
+              <li><code>yield</code>: cede la CPU ogni ~16k iterazioni.</li>
+              <li><code>sleep</code>: dorme 1 ms ogni ~16k iterazioni.</li>
+            </ul>
+          </li>
+          <li><code>join()</code>: attende il completamento di tutti i thread.</li>
+        </ul>
+      </details>
+
+      <details open>
+        <summary><strong><code>main</code> e misurazioni</strong></summary>
+<pre><code class="language-java">    public static void main(String[] args) throws Exception {
+        int N = (args.length &gt; 0) ? Integer.parseInt(args[0]) : 2_000_000;
+        int T = (args.length &gt; 1) ? Integer.parseInt(args[1]) : 4;
+        String spice = (args.length &gt; 2) ? args[2] : null;
+
+        long[] a = makeArray(N);
+
+        long ref = sumMono(a);
+
+        for (int run = 1; run &lt;= 3; run++) {
+            long t0 = System.nanoTime();
+            long broken = sumBroken(a, T, spice);
+            double sec = (System.nanoTime() - t0) / 1e9;
+
+            System.out.printf("Run %d  broken=%d  (ref=%d)  time=%.3fs  threads=%d  mode=%s%n",
+                    run, broken, ref, sec, T, (spice == null ? "-" : spice));
+        }
+
+        System.out.println("\nOsserva: broken spesso != ref (race condition). Prova a cambiare threads, N e mode.");
+    }
+}</code></pre>
+        <p>Tre run per mostrare che <code>broken</code> spesso differisce da <code>ref</code> a causa della race condition.</p>
+      </details>
+    </section>
+
+    <section>
+      <h2>Come eseguire</h2>
+<pre><code class="language-bash">javac it/scuola/vaccarini/_202526/_4ai/threading/es03/RaceSumBroken.java
+java it.scuola.vaccarini._202526._4ai.threading.es03.RaceSumBroken
+java ... RaceSumBroken 2000000 8 yield
+java ... RaceSumBroken 2000000 8 sleep</code></pre>
+      <p><strong>Nota:</strong> ripeti più volte: vedrai <code>broken</code> cambiare, spesso &lt; <code>ref</code>.</p>
+    </section>
+
+    <section>
+      <h2>Perché succede?</h2>
+      <p><code>total[0] += a[i]</code> non è atomico: è una sequenza <em>leggi → modifica → scrivi</em>.
+         Due thread possono leggere lo stesso vecchio valore e poi scrivere aggiornamenti che si sovrascrivono.
+         Serve una <strong>mutua esclusione</strong> (<code>synchronized</code>, <code>Lock</code>, <code>AtomicLong</code>, ecc.).</p>
+    </section>
+
+    <section class="card">
+      <h2>Spunto per l’ora successiva</h2>
+      <ul>
+        <li>Protezione con <code>synchronized</code> su un oggetto lock.</li>
+        <li>Uso di <code>AtomicLong</code> con <code>addAndGet</code>.</li>
+        <li>Somma locale per thread + riduzione finale (pattern “reduce”).</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Esercizi</h2>
+      <ol>
+        <li>Prova diverse combinazioni di <code>N</code>, <code>T</code> e <code>mode</code> (<code>yield</code>/<code>sleep</code>)
+            e osserva le differenze tra <code>broken</code> e <code>ref</code>.</li>
+        <li>Riscrivi <code>sumBroken</code> usando <code>AtomicLong</code>. Confronta tempi e correttezza.</li>
+        <li>Ogni thread accumuli su una variabile locale e alla fine aggiunga in modo sincronizzato.</li>
+        <li>Implementa versioni con <code>Runnable</code> e <code>Thread</code>, confrontando i due approcci.</li>
+      </ol>
+    </section>
+
+    <footer class="site-footer">
+      <p>Docente: prof. Marco Cocciniglia — Materiali con font e colori DSA-friendly • Tema chiaro/scuro.</p>
+    </footer>
+  </main>
+</body>
+</html>
