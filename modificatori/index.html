@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Java – final e altri modificatori</title>
+
+  <!-- CSS condivisi (DSA-friendly) -->
+  <link rel="stylesheet" href="https://mcocciniglia.github.io/common/assets/style.css" />
+  <link rel="stylesheet" href="https://mcocciniglia.github.io/common/assets/theme.css" />
+
+  <!-- Icona -->
+  <link rel="icon" href="https://mcocciniglia.github.io/common/assets/favicon.svg" type="image/svg+xml" />
+
+  <!-- JS tema/contrasto condiviso -->
+  <script defer src="https://mcocciniglia.github.io/common/assets/theme.js"></script>
+
+  <style>
+    /* Piccoli aggiustamenti locali (compatibili con i CSS comuni) */
+    .page-title { margin-top: 0.5rem; }
+    .code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    pre { overflow-x: auto; padding: 0.75rem 1rem; border-radius: 0.75rem; }
+    .exercise, .quiz { border: 1px solid var(--border, #e5e7eb); border-radius: 0.75rem; padding: 1rem; margin: 1rem 0; }
+    .exercise h3, .quiz h3 { margin-top: 0; }
+    .pill { margin: 0.25rem 0 0; }
+    details.answer { margin-top: 0.5rem; }
+    .note { font-size: 0.95rem; opacity: .9; }
+    .toc a { text-decoration: none; }
+    .ok { color: var(--success-600, #15803d); font-weight: 600; }
+    .bad { color: var(--danger-600, #b91c1c); font-weight: 600; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono"; border: 1px solid var(--border); border-bottom-width: 3px; padding: 0 .35rem; border-radius: .5rem; }
+    footer.site { margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed var(--border); font-size: .95rem; opacity: .9; }
+      /* Centraggi e larghezze comode */
+    .container { max-width: 1000px; margin-inline: auto; }
+    .site-header { padding: .5rem 1rem 1rem; }
+    .site-header .page-title { text-align: center; margin: 1rem auto .25rem; }
+    .site-header .theme-controls { display: flex; gap: .5rem; justify-content: center; }
+
+    /* Quiz in griglia 2×2 */
+    .q { margin: 0 0 1rem 0; }
+    .choices { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem 1.25rem; margin: .35rem 0 .5rem 1rem; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <nav class="breadcrumbs" aria-label="Percorso">
+      <a href="https://mcocciniglia.github.io/">Home</a>
+      <span aria-hidden="true">›</span>
+      <a href="#">Informatica</a>
+      <span aria-hidden="true">›</span>
+      <strong>Java – final e modificatori</strong>
+    </nav>
+
+    <!-- Controlli tema / contrasto (come nelle altre pagine) -->
+    <div class="theme-controls">
+      <button id="themeToggle" class="btn btn-theme" type="button" aria-pressed="false" aria-label="Cambia tema">
+        <span class="btn-label">Tema scuro 🌙</span>
+      </button>
+      <button id="contrastToggle" class="btn btn-outline btn-contrast" type="button"
+              aria-pressed="false" aria-label="Attiva/disattiva contrasto alto">
+        Contrasto alto ☀️
+      </button>
+    </div>
+
+    <h1 class="page-title">Java – <code class="code">final</code> e altri modificatori</h1>
+    <p class="pill">⏱️ 1 ora • Classe: 4ª IT • Modalità: laboratorio</p>
+  </header>
+
+  <main class="container">
+    <section class="callout info">
+      <p><strong>Obiettivo:</strong> capire e usare correttamente i principali modificatori Java (<code class="code">final</code>, visibilità, <code class="code">static</code>, <code class="code">abstract</code>, <code class="code">synchronized</code>), con esempi semplici, <em>poi</em> esercizi e <em>infine</em> quiz.</p>
+    </section>
+
+    <nav class="toc" aria-label="Indice della pagina">
+      <ol>
+        <li><a href="#final">La parola chiave <code class="code">final</code></a></li>
+        <li><a href="#accesso">Modificatori di accesso</a></li>
+        <li><a href="#static">Il modificatore <code class="code">static</code></a></li>
+        <li><a href="#abstract">Classi e metodi <code class="code">abstract</code></a></li>
+        <li><a href="#sync">Il modificatore <code class="code">synchronized</code></a></li>
+        <li><a href="#esercizi">Esercizi (facile → medio → avanzato)</a></li>
+        <li><a href="#quiz">Quiz (10 domande)</a></li>
+      </ol>
+    </nav>
+
+    <hr />
+
+    <!-- TEORIA -->
+    <section id="final">
+      <h2>1) La parola chiave <code class="code">final</code></h2>
+      <p><code class="code">final</code> indica che un elemento <strong>non può più essere modificato</strong> dopo la sua definizione:</p>
+      <ul>
+        <li><strong>Variabile</strong>: il valore non cambia (costante).</li>
+        <li><strong>Metodo</strong>: non può essere sovrascritto (<em>override</em>).</li>
+        <li><strong>Classe</strong>: non può essere estesa (<em>extends</em> non consentito).</li>
+      </ul>
+      <h3>final su variabile</h3>
+      <pre class="code"><code>final int MAX_STUDENTI = 30;
+// MAX_STUDENTI = 31; // ❌ Errore: non si può riassegnare
+
+class Rettangolo {
+    private final double base;
+    private final double altezza;
+
+    Rettangolo(double base, double altezza) {
+        this.base = base;
+        this.altezza = altezza;
+    }
+
+    double area() { return base * altezza; }
+}
+</code></pre>
+      <h3>final su metodo</h3>
+      <pre class="code"><code>class A {
+    public final void saluta() { System.out.println("Ciao!"); }
+}
+class B extends A {
+    // public void saluta() { } // ❌ Errore: non si può fare override
+}
+</code></pre>
+      <h3>final su classe</h3>
+      <pre class="code"><code>final class CostanteMatematica {
+    public static final double PI = 3.14159;
+}
+// class Estesa extends CostanteMatematica {} // ❌ Errore: classe final
+</code></pre>
+      <p class="note">Nota: la classe <code class="code">String</code> in Java è <code class="code">final</code>, il che la rende immutabile e non estendibile.</p>
+    </section>
+
+    <hr />
+
+    <section id="accesso">
+      <h2>2) Modificatori di accesso</h2>
+      <table class="table compact">
+        <thead>
+          <tr><th>Modificatore</th><th>Visibile a</th><th>Uso tipico</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code class="code">public</code></td><td>Ovunque</td><td>API e metodi pubblici</td></tr>
+          <tr><td><code class="code">private</code></td><td>Solo nella classe</td><td>Incapsulare dettagli</td></tr>
+          <tr><td><code class="code">protected</code></td><td>Classe + sottoclassi (anche in altri package)</td><td>Personalizzazione in ereditarietà</td></tr>
+          <tr><td><em>default</em></td><td>Solo nel package</td><td>Organizzazione interna del package</td></tr>
+        </tbody>
+      </table>
+      <pre class="code"><code>public class Persona {
+    private String nome;     // visibile solo dentro Persona
+    protected int eta;       // visibile alle sottoclassi
+    String codiceFiscale;    // default: visibile nel package
+
+    public void saluta() {
+        System.out.println("Ciao!");
+    }
+}
+</code></pre>
+    </section>
+
+    <hr />
+
+    <section id="static">
+      <h2>3) Il modificatore <code class="code">static</code></h2>
+      <p><code class="code">static</code> indica che un membro <strong>appartiene alla classe</strong> (non alle singole istanze) ed è condiviso.</p>
+      <pre class="code"><code>class Contatore {
+    static int totale = 0;
+    Contatore() { totale++; }
+}
+
+Contatore a = new Contatore();
+Contatore b = new Contatore();
+System.out.println(Contatore.totale); // → 2
+</code></pre>
+    </section>
+
+    <hr />
+
+    <section id="abstract">
+      <h2>4) Classi e metodi <code class="code">abstract</code></h2>
+      <p>Una classe <code class="code">abstract</code> è <strong>incompleta</strong> e non può essere istanziata. Contiene metodi da implementare nelle sottoclassi.</p>
+      <pre class="code"><code>abstract class Forma {
+    abstract double area(); // niente corpo
+}
+
+class Quadrato extends Forma {
+    double lato;
+    Quadrato(double lato) { this.lato = lato; }
+    double area() { return lato * lato; }
+}
+</code></pre>
+    </section>
+
+    <hr />
+
+    <section id="sync">
+      <h2>5) Il modificatore <code class="code">synchronized</code></h2>
+      <p>Consente <strong>accesso esclusivo</strong> a un metodo o blocco quando ci sono più thread.</p>
+      <pre class="code"><code>class Sicuro {
+    private int valore = 0;
+
+    public synchronized void incrementa() {
+        valore++;
+    }
+
+    public int leggi() { return valore; }
+}
+</code></pre>
+    </section>
+
+    <hr />
+
+    <!-- ESERCIZI -->
+    <section id="esercizi">
+      <h2>6) Esercizi graduati</h2>
+
+      <article class="exercise">
+        <h3>💡 Facile</h3>
+        <ol>
+          <li>Crea una costante <code class="code">final</code> <code class="code">MAX_TENTATIVI</code> e stampala.</li>
+          <li>Dichiara una classe <code class="code">Libri</code> con un campo <code class="code">private</code> <code class="code">titolo</code> e un metodo <code class="code">public</code> <code class="code">getTitolo()</code>.</li>
+          <li>In una classe <code class="code">Contatore</code>, aggiungi un campo <code class="code">static</code> che conteggi quante istanze vengono create.</li>
+        </ol>
+        <details class="answer"><summary>Soluzione (mostra/nascondi)</summary>
+<pre class="code"><code>final int MAX_TENTATIVI = 3;
+System.out.println(MAX_TENTATIVI);
+
+class Libri {
+    private String titolo;
+    Libri(String titolo) { this.titolo = titolo; }
+    public String getTitolo() { return titolo; }
+}
+
+class Contatore {
+    static int tot = 0;
+    Contatore() { tot++; }
+}
+</code></pre>
+        </details>
+      </article>
+
+      <article class="exercise">
+        <h3>🧩 Medio</h3>
+        <ol>
+          <li>Crea una classe <code class="code">RegistratoreCassa</code> con campo <code class="code">private</code> <code class="code">totale</code>. Aggiungi un metodo <code class="code">public</code> per aggiungere importi e uno per leggere il totale.</li>
+          <li>Crea una classe <code class="code">Costanti</code> con <code class="code">public static final double IVA = 0.22</code>. Usala in un calcolo.</li>
+          <li>Crea una classe <code class="code">Base</code> con metodo <code class="code">public final void info()</code>. Tenta di sovrascriverlo in una sottoclasse e verifica l’errore del compilatore.</li>
+        </ol>
+        <details class="answer"><summary>Traccia di soluzione</summary>
+<pre class="code"><code>class RegistratoreCassa {
+    private double totale = 0;
+    public void aggiungi(double importo) { totale += importo; }
+    public double getTotale() { return totale; }
+}
+
+class Costanti {
+    public static final double IVA = 0.22; // costante condivisa
+}
+
+class Base {
+    public final void info() { System.out.println("Base"); }
+}
+
+class Derivata extends Base {
+    // @Override void info() {} // ❌ Errore: metodo final
+}
+</code></pre>
+        </details>
+      </article>
+
+      <article class="exercise">
+        <h3>🚀 Avanzato</h3>
+        <ol>
+          <li>Progetta una gerarchia con una classe <code class="code">abstract</code> <code class="code">Sensore</code> (metodo <code class="code">leggi()</code>) e una concreta <code class="code">Termometro</code>. Rendi <code class="code">Termometro</code> immutabile con campi <code class="code">final</code>.</li>
+          <li>Implementa un contatore <code class="code">thread-safe</code> con metodo <code class="code">synchronized</code> <code class="code">incrementa()</code> e prova ad incrementarlo da due thread distinti.</li>
+          <li>(Extra) Spiega perché rendere la classe <code class="code">String</code> <code class="code">final</code> aiuta sicurezza e caching.</li>
+        </ol>
+        <details class="answer"><summary>Soluzione d’esempio</summary>
+<pre class="code"><code>abstract class Sensore { abstract double leggi(); }
+
+final class Termometro extends Sensore {
+    private final String id;
+    private final double ultimaLettura;
+    Termometro(String id, double ultimaLettura) {
+        this.id = id; this.ultimaLettura = ultimaLettura;
+    }
+    double leggi() { return ultimaLettura; }
+}
+
+class SafeCounter {
+    private int v = 0;
+    public synchronized void incrementa() { v++; }
+    public synchronized int get() { return v; }
+}
+
+class Test {
+    public static void main(String[] args) throws InterruptedException {
+        SafeCounter c = new SafeCounter();
+        Thread t1 = new Thread(() -> { for (int i=0;i<10000;i++) c.incrementa(); });
+        Thread t2 = new Thread(() -> { for (int i=0;i<10000;i++) c.incrementa(); });
+        t1.start(); t2.start();
+        t1.join(); t2.join();
+        System.out.println(c.get()); // atteso 20000
+    }
+}
+</code></pre>
+        </details>
+      </article>
+    </section>
+
+    <hr />
+
+    <!-- QUIZ (alla fine) -->
+    <section id="quiz" class="quiz">
+      <h2>7) Quiz – 10 domande</h2>
+
+      <div class="q">
+        <p>1) <strong>V/F</strong>: Una variabile <code class="code">final</code> può essere riassegnata una sola volta.</p>
+      </div>
+
+      <div class="q">
+        <p>2) Quale modificatore rende un metodo visibile ovunque?</p>
+        <div class="choices">
+          <div>A) <code class="code">private</code></div>
+          <div>B) <code class="code">public</code></div>
+          <div>C) <code class="code">protected</code></div>
+          <div>D) default</div>
+        </div>
+      </div>
+
+      <div class="q">
+        <p>3) Quale affermazione è vera su <code class="code">static</code>?</p>
+        <div class="choices">
+          <div>A) Appartiene all’istanza</div>
+          <div>B) Appartiene alla classe</div>
+          <div>C) Rende il metodo non sovrascrivibile</div>
+          <div>D) Impedisce l’estensione</div>
+        </div>
+      </div>
+
+      <div class="q">
+        <p>4) <strong>V/F</strong>: Una classe <code class="code">final</code> può essere estesa se si usa <code class="code">implements</code>.</p>
+      </div>
+
+      <div class="q">
+        <p>5) Un metodo <code class="code">abstract</code>:</p>
+        <div class="choices">
+          <div>A) Ha un’implementazione</div>
+          <div>B) Non ha corpo</div>
+          <div>C) Non può essere chiamato</div>
+          <div>D) È sempre <code class="code">private</code></div>
+        </div>
+      </div>
+
+      <div class="q">
+        <p>6) <strong>V/F</strong>: <code class="code">protected</code> permette l’accesso alle sole classi dello stesso package.</p>
+      </div>
+
+      <div class="q">
+        <p>7) Quale combinazione è corretta per una costante condivisa?</p>
+        <div class="choices">
+          <div>A) <code class="code">public final</code></div>
+          <div>B) <code class="code">public static</code></div>
+          <div>C) <code class="code">public static final</code></div>
+          <div>D) <code class="code">private static</code></div>
+        </div>
+      </div>
+
+      <div class="q">
+        <p>8) Lo scopo di <code class="code">synchronized</code> è:</p>
+        <div class="choices">
+          <div>A) Rendere il codice più veloce</div>
+          <div>B) Impedire override</div>
+          <div>C) Gestire accesso concorrente</div>
+          <div>D) Rendere il valore immutabile</div>
+        </div>
+      </div>
+
+      <div class="q">
+        <p>9) <strong>V/F</strong>: Un campo <code class="code">final</code> deve essere inizializzato entro il costruttore o al punto di dichiarazione.</p>
+      </div>
+
+      <div class="q">
+        <p>10) Il livello di accesso <em>default</em> consente visibilità:</p>
+        <div class="choices">
+          <div>A) Ovunque</div>
+          <div>B) Solo nella classe</div>
+          <div>C) Nel package</div>
+          <div>D) Solo nelle sottoclassi</div>
+        </div>
+      </div>
+
+      <details class="answer"><summary>Soluzioni (mostra/nascondi)</summary>
+        <ol>
+          <li><span class="bad">F</span> (Una <em>final</em> non può essere riassegnata dopo l’inizializzazione)</li>
+          <li><span class="ok">B</span></li>
+          <li><span class="ok">B</span></li>
+          <li><span class="bad">F</span> (Una classe <em>final</em> non può essere estesa in nessun modo)</li>
+          <li><span class="ok">B</span></li>
+          <li><span class="bad">F</span> (<em>protected</em> include anche le sottoclassi)</li>
+          <li><span class="ok">C</span></li>
+          <li><span class="ok">C</span></li>
+          <li><span class="ok">V</span></li>
+          <li><span class="ok">C</span></li>
+        </ol>
+      </details>
+    </section>
+
+    <section class="callout tip">
+      <strong>Riassunto:</strong> <code class="code">final</code> = non modificabile; <code class="code">public/private/protected/default</code> = visibilità; <code class="code">static</code> = membro di classe; <code class="code">abstract</code> = da completare; <code class="code">synchronized</code> = accesso esclusivo tra thread.
+    </section>
+
+    <footer class="site">
+      Preparato da <strong>Marco Cocciniglia – 4ª IT</strong> · Aggiornato: <time id="lastUpdate" datetime="2025-10-27">27/10/2025</time>
+    </footer>
+  </main>
+</body>
+</html>

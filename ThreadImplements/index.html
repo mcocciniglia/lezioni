@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Programmazione concorrente in Java — Thread e Runnable (4ª IT)</title>
+
+  <!-- Accessibilità / SEO -->
+  <meta name="robots" content="noindex, nofollow" />
+
+  <!-- Stili e tema condivisi -->
+  <link rel="stylesheet" href="https://mcocciniglia.github.io/common/assets/style.css">
+  <link rel="stylesheet" href="https://mcocciniglia.github.io/common/assets/theme.css">
+  <script defer src="https://mcocciniglia.github.io/common/assets/theme.js"></script>
+  <link rel="icon" href="https://mcocciniglia.github.io/common/assets/favicon.svg" type="image/svg+xml" />
+</head>
+<body>
+  <header class="page-header">
+    <div class="header-top">
+      <h1>Programmazione concorrente in Java</h1>
+
+      <!-- Controlli tema / contrasto (come nelle altre pagine) -->
+      <div class="theme-controls">
+        <button id="themeToggle" class="btn btn-theme" type="button" aria-pressed="false" aria-label="Cambia tema">
+          <span class="btn-label">Tema scuro 🌙</span>
+        </button>
+        <button id="contrastToggle" class="btn btn-outline btn-contrast" type="button"
+                aria-pressed="false" aria-label="Attiva/disattiva contrasto alto">
+          Contrasto alto ☀️
+        </button>
+      </div>
+    </div>
+
+    <p class="pill">⏱️ 1 ora • Classe: 4ª IT • Modalità: laboratorio • Font DSA-friendly</p>
+    <p class="subtitle">Sintesi: differenze tra <code>Thread</code> ed <code>Runnable</code>, avvio, pausa, attesa con <code>join()</code>, interruzione.</p>
+  </header>
+
+  <main class="content">
+    <nav class="toc">
+      <strong>In questa lezione</strong>
+      <ol>
+        <li><a href="#concetti">Concetti chiave</a></li>
+        <li><a href="#thread-class">Esempio A — Estendere <code>Thread</code></a></li>
+        <li><a href="#runnable-intf">Esempio B — Implementare <code>Runnable</code></a></li>
+        <li><a href="#join-interrupt">Esempio C — <code>join()</code> e interruzione</a></li>
+        <li><a href="#esercizi">Esercizi guidati (in aula)</a></li>
+        <li><a href="#verifica">Proposta di verifica (≤ 40’)</a></li>
+      </ol>
+    </nav>
+
+    <section id="concetti">
+      <h2>1) Concetti chiave</h2>
+      <ul>
+        <li><strong>Thread</strong>: sequenza di istruzioni che può correre in (apparente) parallelo con altre sequenze.</li>
+        <li><strong>Multithreading</strong>: più thread attivi nello stesso processo condividono la CPU.</li>
+        <li><strong>Due modi principali</strong> per creare un thread in Java:
+          <ol>
+            <li><em>Estendere</em> la classe <code>Thread</code> e riscrivere <code>run()</code>.</li>
+            <li><em>Implementare</em> l’interfaccia <code>Runnable</code> e passare l’oggetto a <code>new Thread(...)</code>.</li>
+          </ol>
+        </li>
+        <li><strong>Metodi utili</strong>: <code>start()</code> (avvia), <code>run()</code> (codice del thread), <code>sleep(ms)</code> (pausa), <code>join()</code> (attesa), <code>interrupt()</code>/<code>isInterrupted()</code> (segnalazione di stop).</li>
+      </ul>
+      <div class="callout info">
+        <p><strong>Nota didattica</strong>: qui proponiamo <u>esempi diversi</u> da quelli del libro, mantenendo solo costrutti base. Niente lambda, niente API avanzate.</p>
+      </div>
+    </section>
+
+    <section id="thread-class">
+      <h2>2) Esempio A — Estendere <code>Thread</code></h2>
+      <p>Creiamo due thread che stampano un messaggio con velocità diverse. Il main attende la fine di entrambi.</p>
+<pre><code class="language-java">// File: EsempioThreadEsteso.java
+class SalutaThread extends Thread {
+    private final String messaggio;
+    private final int ritardoMs;
+
+    public SalutaThread(String nome, String messaggio, int ritardoMs) {
+        super(nome);              // imposta il nome del thread
+        this.messaggio = messaggio;
+        this.ritardoMs = ritardoMs;
+    }
+
+    @Override
+    public void run() {
+        try {
+            for (int i = 1; i &lt;= 5; i++) {
+                System.out.println("[" + getName() + "] " + messaggio + " (" + i + ")");
+                Thread.sleep(ritardoMs);
+            }
+        } catch (InterruptedException ie) {
+            System.out.println("[" + getName() + "] interrotto durante sleep.");
+        }
+        System.out.println("[" + getName() + "] fine.");
+    }
+}
+
+public class EsempioThreadEsteso {
+    public static void main(String[] args) throws InterruptedException {
+        Thread t1 = new SalutaThread("Tartaruga", "Ciao dalla tartaruga", 700);
+        Thread t2 = new SalutaThread("Lepre", "Ciao dalla lepre", 300);
+
+        t1.start();  // avvio parallelo
+        t2.start();
+
+        // attendo che finiscano
+        t1.join();
+        t2.join();
+
+        System.out.println("Main: tutti i thread terminati.");
+    }
+}
+</code></pre>
+      <ul>
+        <li><code>super(nome)</code> imposta il nome visibile nei log.</li>
+        <li><code>sleep</code> sospende il thread senza bloccare gli altri.</li>
+      </ul>
+    </section>
+
+    <section id="runnable-intf">
+      <h2>3) Esempio B — Implementare <code>Runnable</code></h2>
+      <p>Qui separiamo il <em>compito</em> (classe che implementa <code>Runnable</code>) dal <em>contenitore</em> (<code>Thread</code>).</p>
+<pre><code class="language-java">// File: EsempioRunnable.java
+class Conteggio implements Runnable {
+    private final String etichetta;
+    private final int max;
+    private final int pausaMs;
+
+    public Conteggio(String etichetta, int max, int pausaMs) {
+        this.etichetta = etichetta;
+        this.max = max;
+        this.pausaMs = pausaMs;
+    }
+
+    @Override
+    public void run() {
+        try {
+            for (int i = 1; i &lt;= max; i++) {
+                System.out.println(etichetta + ": " + i);
+                Thread.sleep(pausaMs);
+            }
+        } catch (InterruptedException ie) {
+            System.out.println(etichetta + ": interrotto.");
+        }
+        System.out.println(etichetta + ": fine.");
+    }
+}
+
+public class EsempioRunnable {
+    public static void main(String[] args) {
+        Runnable pari = new Conteggio("Pari", 10, 200);
+        Runnable dispari = new Conteggio("Dispari", 10, 300);
+
+        Thread tPari = new Thread(pari, "Thread-Pari");
+        Thread tDispari = new Thread(dispari, "Thread-Dispari");
+
+        tPari.start();
+        tDispari.start();
+    }
+}
+</code></pre>
+      <p><em>Quando preferire Runnable?</em> Se la tua classe deve già estendere un’altra classe, o se vuoi separare chiaramente “cosa fare” da “dove farlo correre”.</p>
+    </section>
+
+    <section id="join-interrupt">
+      <h2>4) Esempio C — <code>join()</code> e interruzione</h2>
+      <p>Il main prova ad interrompere un thread “lento”, poi aspetta con <code>join()</code>.</p>
+<pre><code class="language-java">// File: JoinEInterrupt.java
+class LavoroLento implements Runnable {
+    @Override
+    public void run() {
+        System.out.println("LavoroLento: inizio.");
+        for (int i = 1; i &lt;= 10; i++) {
+            // Controllo periodico dell'interruzione
+            if (Thread.currentThread().isInterrupted()) {
+                System.out.println("LavoroLento: ricevuta richiesta di stop.");
+                break;
+            }
+            System.out.println("LavoroLento: passo " + i);
+            try {
+                Thread.sleep(400); // può lanciare InterruptedException
+            } catch (InterruptedException ie) {
+                System.out.println("LavoroLento: interrotto durante sleep.");
+                // reimposta il flag se vuoi gestirlo fuori dal catch
+                Thread.currentThread().interrupt();
+            }
+        }
+        System.out.println("LavoroLento: fine.");
+    }
+}
+
+public class JoinEInterrupt {
+    public static void main(String[] args) throws InterruptedException {
+        Thread t = new Thread(new LavoroLento(), "Worker");
+        t.start();
+
+        Thread.sleep(1500);   // dopo un po' chiediamo lo stop
+        System.out.println("Main: invio interrupt...");
+        t.interrupt();
+
+        System.out.println("Main: attendo con join...");
+        t.join();
+        System.out.println("Main: terminato.");
+    }
+}
+</code></pre>
+      <ul>
+        <li><code>interrupt()</code> non “uccide” il thread: invia una <em>richiesta</em>. Il thread deve collaborare.</li>
+        <li><code>join()</code> fa attendere il main finché il thread indicato non termina.</li>
+      </ul>
+    </section>
+
+    <section id="esercizi">
+      <h2>5) Esercizi guidati (in aula)</h2>
+      <ol>
+        <li><strong>Due timer</strong>: crea due thread (uno ogni 500 ms, l’altro ogni 1200 ms) che stampano “tic” e “tac” 8 volte. Attendi la fine con <code>join()</code>.</li>
+        <li><strong>Stampa di un array</strong>: crea una classe <code>Printer implements Runnable</code> che riceve un array di stringhe e lo stampa con una pausa tra gli elementi.</li>
+        <li><strong>Stop gentile</strong>: fai partire un thread che conta da 1 a 1000. Dal main invia <code>interrupt()</code> dopo 1 secondo; il thread deve fermarsi mostrando un messaggio.</li>
+      </ol>
+      <p>Consegna su Classroom: allega i tre file <code>.java</code> (o un unico progetto) con commenti chiari.</p>
+    </section>
+
+    <section id="verifica">
+      <h2>6) Proposta di verifica (≤ 40 minuti)</h2>
+      <ol>
+        <li><strong>Estendi Thread</strong> e stampa la tabellina di un numero (dato nel <code>main</code>) per 10 righe, con pausa tra le righe.</li>
+        <li><strong>Implementa Runnable</strong> per stampare i caratteri di una stringa uno alla volta con pausa; il main avvia due stringhe diverse in parallelo.</li>
+        <li><strong>Attesa</strong>: il main avvia i due thread e mostra “FINE PROGRAMMA” solo dopo che entrambi hanno terminato (usa <code>join()</code>).</li>
+      </ol>
+      <p><strong>Valutazione</strong>: correttezza (compila/esegue), uso di <code>start()</code>/<code>run()</code>/<code>join()</code>, gestione <code>InterruptedException</code>, chiarezza del codice e dei commenti.</p>
+    </section>
+
+    <footer class="page-footer">
+      <p>© 2025 — 4ª IT • TPSIT • Docente: M. Cocciniglia • Repo: <code>mcocciniglia.github.io/lezioni</code></p>
+    </footer>
+  </main>
+</body>
+</html>
