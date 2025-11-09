@@ -66,6 +66,8 @@
       z-index: 1000;
     }
 
+    /* Varianti dei bottoni per i controlli (si appoggiano alla .btn globale) */
+
     /* Tema CHIARO: pulsante arancione pieno + outline arancione */
     html:not([data-theme="dark"]) .btn-theme {
       background: #ff7b00;
@@ -88,7 +90,11 @@
       color: #ffffff !important;
     }
 
-    /* Tema SCURO: lasciamo i colori base del tema, ma manteniamo il bordo per il contrasto */
+    /* Tema SCURO: lasciamo gestire i colori di base al tema, ma manteniamo il bordo per il contrasto */
+    html[data-theme="dark"] .btn-theme {
+      /* usa i colori definiti per .btn in theme.css */
+    }
+
     html[data-theme="dark"] .btn-outline {
       background: transparent;
       border-color: var(--brand);
@@ -104,7 +110,7 @@
 <body>
   <a class="skip-link" href="#contenuto">Salta al contenuto principale</a>
 
-  <!-- Controlli tema / contrasto -->
+  <!-- Controlli tema / contrasto (come nelle altre pagine) -->
   <div class="theme-controls">
     <button id="themeToggle" class="btn btn-theme" type="button"
             aria-pressed="false" aria-label="Cambia tema">
@@ -119,7 +125,7 @@
   <div class="container narrow">
     <header class="page-header">
       <h1>Verifica di laboratorio – Programmazione concorrente in Java</h1>
-      <p class="subtitle">Thread e interfaccia <code>Runnable</code></p>
+      <p class="subtitle">Completamento di codice – Thread e interfaccia <code>Runnable</code></p>
       <p class="pill">⏱️ 1 ora • Classe: 4ª Informatica • Modalità: laboratorio (PC)</p>
     </header>
 
@@ -128,12 +134,12 @@
         <h2>Indicazioni generali</h2>
         <ul>
           <li>Durata effettiva al PC: circa <strong>40 minuti</strong>.</li>
-          <li>Lavora in modo autonomo e in silenzio.</li>
+          <li>Completa il codice proposto in modo autonomo e in silenzio.</li>
           <li>Al termine, salva il file e caricalo su <strong>Classroom</strong> con il nome richiesto.</li>
           <li>Puoi consultare solo eventuali appunti cartacei o la documentazione Java offline.</li>
         </ul>
         <p>
-          <strong>Obiettivo della prova:</strong> applicare i concetti di programmazione concorrente
+          <strong>Obiettivo della prova:</strong> comprendere e applicare i concetti di programmazione concorrente
           usando thread Java tramite l’interfaccia <code>Runnable</code> e i metodi
           <code>start()</code>, <code>sleep()</code>, <code>join()</code>.
         </p>
@@ -142,40 +148,62 @@
       <section class="panel">
         <h2>Traccia di verifica</h2>
 
-        <p>Scrivi un programma Java che simuli <strong>due contatori</strong> che lavorano in parallelo.</p>
+        <p>
+          Completare il seguente programma Java in modo che due thread stampino
+          in parallelo i numeri da <strong>1 a 5</strong>.
+        </p>
 
-        <ol>
-          <li>
-            Progetta una classe che rappresenti un contatore eseguibile in modo concorrente.
-            Ogni istanza deve avere:
-            <ul>
-              <li>un <strong>nome</strong> (ad esempio <code>"Contatore 1"</code>, <code>"Contatore 2"</code>);</li>
-              <li>un <strong>limite massimo</strong> (ad esempio <code>5</code> o <code>10</code>).</li>
-            </ul>
-          </li>
-          <li>
-            Nel codice eseguito in parallelo:
-            <ul>
-              <li>stampa i numeri da <code>1</code> al limite, preceduti dal nome del contatore
-                  (esempio: <code>Contatore 1: 1</code>, <code>Contatore 1: 2</code>, ...);</li>
-              <li>tra una stampa e l’altra inserisci una <strong>pausa</strong> di durata casuale
-                  tra <strong>500 ms</strong> e <strong>1000 ms</strong>.</li>
-            </ul>
-          </li>
-          <li>
-            Nel metodo di avvio del programma:
-            <ul>
-              <li>crea due contatori con nomi e limiti a tua scelta;</li>
-              <li>avvia entrambi i contatori in modo concorrente;</li>
-              <li>attendi la fine di entrambi prima di terminare l’esecuzione;</li>
-              <li>alla fine visualizza il messaggio:
-                <code>System.out.println("Fine del programma");</code>
-              </li>
-            </ul>
-          </li>
-        </ol>
+        <pre><code>public class Main {
+    public static void main(String[] args) throws InterruptedException {
 
-        <h3>Esempio di output (l’ordine può cambiare)</h3>
+        Contatore c1 = new Contatore("Contatore 1");
+        Contatore c2 = new Contatore("Contatore 2");
+
+        Thread t1 = new Thread(c1);
+        Thread t2 = new Thread(c2);
+
+        // Avvio dei thread
+        // TODO: chiama il metodo per avviare i due thread
+        // t1.________();
+        // t2.________();
+
+        // Attesa della fine dei thread
+        // TODO: chiama il metodo per attendere la fine dei due thread
+        // t1.________();
+        // t2.________();
+
+        System.out.println("Fine del programma");
+    }
+}
+
+class Contatore implements Runnable {
+    private String nome;
+
+    public Contatore(String nome) {
+        this.nome = nome;
+    }
+
+    public void run() {
+        for (int i = 1; i &lt;= 5; i++) {
+            System.out.println(nome + ": " + i);
+            try {
+                // Pausa fra una stampa e l'altra
+                // TODO: inserisci una pausa di circa 500 millisecondi
+                // Thread.________(________);
+            } catch (InterruptedException e) {
+                System.out.println(nome + " interrotto");
+            }
+        }
+    }
+}
+</code></pre>
+
+        <h3>Cosa deve fare il programma</h3>
+        <p>
+          L’output deve mostrare le stampe dei due contatori in ordine non perfettamente
+          sequenziale (esecuzione concorrente). Un possibile esempio è:
+        </p>
+
         <pre><code>Contatore 1: 1
 Contatore 2: 1
 Contatore 1: 2
@@ -188,7 +216,8 @@ Fine del programma
 
         <h3>Nome del file da consegnare</h3>
         <p>Salva e carica su Classroom un file con nome:</p>
-        <pre><code>CognomeNome_4AI_VerificaThread.java</code></pre>
+        <pre><code>CognomeNome_4AI_VerificaThread_Completamento.java</code></pre>
+        <p>(segui le indicazioni del docente se viene richiesto un nome diverso)</p>
       </section>
 
       <section class="panel">
@@ -204,37 +233,37 @@ Fine del programma
           </thead>
           <tbody>
             <tr>
-              <td>1. Struttura del programma</td>
+              <td>Struttura del programma</td>
               <td>Organizzazione del codice e corretta suddivisione delle parti funzionali legate alla programmazione concorrente.</td>
               <td>0–2</td>
             </tr>
             <tr>
-              <td>2. Logica del processo concorrente</td>
+              <td>Logica del processo concorrente</td>
               <td>Implementazione coerente del flusso di lavoro parallelo e delle operazioni ripetute richieste.</td>
               <td>0–2</td>
             </tr>
             <tr>
-              <td>3. Avvio e gestione dell'esecuzione</td>
-              <td>Avvio corretto dei processi concorrenti e gestione del loro stato durante l'esecuzione.</td>
+              <td>Avvio e gestione dell'esecuzione</td>
+              <td>Avvio corretto dei processi paralleli e gestione del loro stato durante l'esecuzione.</td>
               <td>0–2</td>
             </tr>
             <tr>
-              <td>4. Coordinamento dei processi</td>
+              <td>Coordinamento dei processi</td>
               <td>Sincronizzazione delle attività concorrenti fino al completamento dell'elaborazione.</td>
               <td>0–1</td>
             </tr>
             <tr>
-              <td>5. Gestione delle attese e delle pause</td>
-              <td>Uso appropriato delle attese temporali e corretta gestione delle eventuali eccezioni.</td>
+              <td>Gestione delle attese e delle pause</td>
+              <td>Uso appropriato delle pause temporali e corretta gestione delle eccezioni connesse.</td>
               <td>0–1</td>
             </tr>
             <tr>
-              <td>6. Risultato dell'esecuzione</td>
+              <td>Risultato dell'esecuzione</td>
               <td>Produzione di un output coerente con la traccia e rappresentativo di un’esecuzione concorrente.</td>
               <td>0–1</td>
             </tr>
             <tr>
-              <td>7. Chiarezza e stile del codice</td>
+              <td>Chiarezza e stile del codice</td>
               <td>Leggibilità del codice, formattazione coerente e corretto uso di nomi e commenti.</td>
               <td>0–1</td>
             </tr>
