@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="it" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Non indicizzabile -->
+  <meta name="robots" content="noindex, nofollow" />
+
+  <title>TPSI · Semafori in Java (esempio parcheggio)</title>
+
+  <!-- CSS comune -->
+  <link rel="stylesheet" href="../../common/assets/style.css" />
+  <link rel="stylesheet" href="../../common/assets/theme.css" />
+  <link rel="stylesheet" href="../../common/assets/prism.css" />
+  <link rel="icon" href="../../common/assets/favicon.svg" type="image/svg+xml" />
+
+  <!-- Script sintassi e tema -->
+  <script src="../../common/assets/prism.js" defer></script>
+  <script src="../../common/assets/theme.js" defer></script>
+
+  <style>
+    /* Barra comandi fissa (non scrolla) */
+    .top-controls{
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      padding: 8px 10px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      box-shadow: var(--shadow);
+    }
+
+    /* Piccolo margine extra così la barra non “copre” i titoli */
+    .page-header{ padding-top: 34px; }
+
+    /* Bottoni un filo più compatti nella topbar */
+    .top-controls .theme-toggle,
+    .top-controls .btn-ghost{
+      padding: 8px 10px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+    }
+
+    /* Pulsante copia (semplice) */
+    .copy-btn{
+      margin-top: 10px;
+    }
+
+    /* Etichetta “ok copiato” */
+    .copied{
+      display: inline-block;
+      margin-left: .5rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#contenuto">Salta al contenuto</a>
+
+  <!-- Comandi fissi (tema + contrasto) -->
+  <div class="top-controls" aria-label="Comandi di visualizzazione">
+    <button id="themeToggle" class="theme-toggle" aria-label="Cambia tema" aria-pressed="false">
+      <span class="btn-label">Tema chiaro ☀️</span>
+    </button>
+
+    <button id="contrastToggle" class="btn btn-ghost"
+      title="AA/AAA = livelli di contrasto per migliorare la leggibilità (accessibilità)"
+      aria-pressed="false">
+      Contrasto alto 🔆
+    </button>
+  </div>
+
+  <header class="page-header">
+    <div class="container narrow">
+      <h1>Semafori in Java</h1>
+      <p class="subtitle">
+        TPSI · Concorrente e sincronizzazione · Esempio guidato: <span class="pill">parcheggio con posti limitati</span>
+      </p>
+    </div>
+  </header>
+
+  <main id="contenuto" class="container narrow">
+
+    <section class="panel callout">
+      <h2>Idea chiave</h2>
+      <p>
+        Un <strong>semaforo</strong> gestisce un numero di <strong>permessi</strong> (permits).
+        Ogni thread che vuole usare una risorsa deve:
+      </p>
+      <ul>
+        <li><code>acquire()</code> → prende 1 permesso (se non c’è, <strong>attende</strong>)</li>
+        <li><code>release()</code> → restituisce 1 permesso</li>
+      </ul>
+      <p class="muted">
+        Se i permessi sono 1 → semaforo “binario” (simile a un mutex).
+        Se i permessi sono N → limita l’accesso a N risorse.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Esempio: parcheggio con 3 posti</h2>
+      <p>
+        Simuliamo 10 auto (thread). Il parcheggio ha solo <strong>3 posti</strong>.
+        Quindi al massimo 3 auto possono “stare dentro” contemporaneamente.
+      </p>
+
+      <details class="tip">
+        <summary>Cosa osservare quando lo esegui</summary>
+        <ul>
+          <li>Quando i posti finiscono, le auto <strong>si mettono in attesa</strong> su <code>acquire()</code>.</li>
+          <li><code>release()</code> va in <strong>finally</strong>: anche se succede un errore, il permesso viene restituito.</li>
+          <li>Con <code>new Semaphore(3, true)</code> abilitiamo la <strong>fairness</strong> (coda più “giusta”).</li>
+        </ul>
+      </details>
+
+      <div class="box">
+        <h3>Codice Java (da copiare in <code>ParkingLotDemo.java</code>)</h3>
+
+        <pre><code class="language-java" id="code-parking">
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
+
+/**
+ * ParkingLotDemo
+ * ------------------------------------------------------------
+ * Esempio didattico: uso di un semaforo CONTATORE in Java.
+ *
+ * Scenario:
+ * - Ci sono 3 posti auto disponibili.
+ * - Arrivano 10 auto (10 thread).
+ * - Ogni auto:
+ *    1) prova ad entrare (acquire)
+ *    2) resta parcheggiata per un tempo casuale (sleep)
+ *    3) esce (release)
+ *
+ * Obiettivo:
+ * - Dimostrare che un semaforo con N permessi limita
+ *   l'accesso concorrente a una risorsa "con capacità N".
+ */
+public class ParkingLotDemo {
+
+    // Numero massimo di auto che possono essere nel parcheggio insieme
+    private static final int POSTI = 3;
+
+    /**
+     * Semaforo con 3 permessi.
+     * fairness = true: i thread vengono sbloccati in modo più "equo"
+     * (tendenzialmente in ordine di arrivo).
+     */
+    private static final Semaphore postiLiberi = new Semaphore(POSTI, true);
+
+    public static void main(String[] args) throws InterruptedException {
+
+        // Creiamo 10 thread, ciascuno rappresenta un'auto
+        Thread[] auto = new Thread[10];
+
+        for (int i = 0; i < auto.length; i++) {
+            int id = i + 1;
+
+            // Runnable "auto": esegue la logica entra-parcheggia-esci
+            auto[i] = new Thread(() -> entraParcheggiaEsci(id), "Auto-" + id);
+
+            // Avvia il thread
+            auto[i].start();
+        }
+
+        // join() serve per aspettare la fine di tutti i thread (opzionale, ma utile)
+        for (Thread t : auto) {
+            t.join();
+        }
+
+        System.out.println("Simulazione conclusa.");
+    }
+
+    /**
+     * Logica eseguita dal thread "auto".
+     * Nota bene: release() è in finally per evitare di "perdere" permessi.
+     */
+    private static void entraParcheggiaEsci(int id) {
+        try {
+            System.out.println("Auto " + id + " arriva e cerca posto...");
+
+            // acquire() prende 1 permesso.
+            // Se i permessi sono finiti, il thread resta BLOCCATO qui
+            // finché qualcuno non chiama release().
+            postiLiberi.acquire();
+
+            System.out.println("Auto " + id + " PARCHEGGIA. Posti rimasti: "
+                    + postiLiberi.availablePermits());
+
+            // Simuliamo il tempo di sosta
+            Thread.sleep(ThreadLocalRandom.current().nextInt(400, 1200));
+
+        } catch (InterruptedException e) {
+            // Se il thread viene interrotto, ripristiniamo lo stato di interrupt
+            Thread.currentThread().interrupt();
+
+        } finally {
+            // release() restituisce 1 permesso.
+            // IMPORTANTISSIMO: se non lo facciamo SEMPRE, rischiamo il blocco totale.
+            postiLiberi.release();
+
+            System.out.println("Auto " + id + " ESCE. Posti rimasti: "
+                    + postiLiberi.availablePermits());
+        }
+    }
+}
+        </code></pre>
+
+        <button class="btn copy-btn" type="button" id="copyParking">
+          Copia il codice negli appunti
+        </button>
+        <span class="copied" id="copiedMsg" aria-live="polite"></span>
+      </div>
+    </section>
+
+    <section class="panel exercise">
+      <h2>Mini-esercizio (per casa / laboratorio)</h2>
+      <ol>
+        <li>Modifica <code>POSTI</code> e prova con <code>1</code> e con <code>5</code>.</li>
+        <li>Prova a mettere <code>false</code> nel costruttore del semaforo e osserva l’ordine di ingresso/uscita.</li>
+        <li>
+          (Sfida) Cambia la storia: <strong>2 stampanti</strong> e 8 studenti che vogliono stampare.
+          Struttura identica: <code>Semaphore(2, true)</code>.
+        </li>
+      </ol>
+
+      <details class="warning">
+        <summary>Errore tipico</summary>
+        <p>
+          Se dimentichi <code>release()</code> (o lo metti fuori da <code>finally</code>),
+          prima o poi “spariscono” permessi e alcuni thread resteranno bloccati per sempre su <code>acquire()</code>.
+        </p>
+      </details>
+    </section>
+
+    <section class="panel">
+      <h2>Come eseguirlo (da terminale)</h2>
+      <ul>
+        <li>Salva il file come <code>ParkingLotDemo.java</code></li>
+        <li>Compila: <code>javac ParkingLotDemo.java</code></li>
+        <li>Esegui: <code>java ParkingLotDemo</code></li>
+      </ul>
+      <p class="muted">
+        Se usate un IDE (Eclipse/IntelliJ/NetBeans), basta creare una classe con lo stesso nome e incollare il codice.
+      </p>
+    </section>
+
+    <footer class="small muted">
+      Materiale didattico TPSI · Semafori (java.util.concurrent.Semaphore)
+    </footer>
+  </main>
+
+  <script>
+    // Pulsante “copia negli appunti” (comodo per gli studenti)
+    window.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("copyParking");
+      const code = document.getElementById("code-parking");
+      const msg = document.getElementById("copiedMsg");
+
+      if (!btn || !code) return;
+
+      btn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(code.textContent.trim());
+          msg.textContent = "Copiato ✅";
+          setTimeout(() => (msg.textContent = ""), 1500);
+        } catch (e) {
+          msg.textContent = "Copia non riuscita (browser/permessi).";
+          setTimeout(() => (msg.textContent = ""), 2000);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
