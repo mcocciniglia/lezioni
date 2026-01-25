@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <title>Esercizio Java — Oggetto monitor e synchronized (output a blocchi)</title>
+
+  <!-- Asset comuni progetto -->
+  <link rel="stylesheet" href="../../common/assets/style.css" />
+  <link rel="stylesheet" href="../../common/assets/theme.css" />
+  <link rel="stylesheet" href="../../common/assets/prism.css" />
+  <link rel="icon" href="../../common/assets/favicon.svg" type="image/svg+xml" />
+
+  <script src="../../common/assets/theme.js" defer></script>
+  <script src="../../common/assets/prism.js" defer></script>
+</head>
+
+<body>
+  <header class="topbar">
+    <div class="topbar__title">
+      <h1>Java — Oggetto monitor e <code>synchronized</code></h1>
+      <p class="subtitle">Esercizio pratico: ottenere un output <strong>“a blocchi”</strong> senza interleaving tra thread.</p>
+    </div>
+
+    <div class="topbar__actions">
+      <!-- Toggle tema: demandato a theme.js del progetto -->
+      <button class="btn" type="button" data-theme-toggle aria-label="Cambia tema">🌗 Tema</button>
+
+      <!-- Toggle suggerimento: gestito localmente -->
+      <button class="btn" type="button" id="btnHint" aria-controls="hintBox" aria-expanded="false">
+        Mostra suggerimento
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel-grid">
+      <article class="card">
+        <h2>Obiettivo</h2>
+        <p>
+          Hai un oggetto <strong>A</strong> con due metodi <code>m1()</code> e <code>m2()</code>.
+          Due thread partono insieme: uno chiama <code>m1()</code>, l’altro chiama <code>m2()</code>.
+        </p>
+
+        <p>
+          <strong>Devi ottenere un output “a blocchi”</strong>:
+          <br />o termina completamente <code>m1()</code> e poi parte <code>m2()</code>,
+          <br />oppure il contrario.
+        </p>
+
+        <div class="callout callout--orange">
+          <p><strong>Non deve succedere</strong> che le righe si mescolino (interleaving), tipo:</p>
+          <pre><code class="language-text">[m1] step 1
+[m2] step 1
+[m1] step 2
+...</code></pre>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2>Cosa fare</h2>
+        <ol>
+          <li>Esegui il programma così com’è: vedrai che <code>m1</code> e <code>m2</code> si mescolano.</li>
+          <li>Modifica <strong>solo</strong> la classe <code>A</code> per ottenere l’output a blocchi.</li>
+          <li>
+            Regola: <em>se un thread è dentro <code>m1()</code>, nessun altro deve entrare in <code>m2()</code>
+            sullo stesso oggetto A (e viceversa)</em>.
+          </li>
+        </ol>
+
+        <div class="callout">
+          <p><strong>Consegna:</strong> file <code>MonitorExercise.java</code> + 2-3 righe di spiegazione del perché ora non si mescola.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Codice scheletro (copia/incolla)</h2>
+      <p>Incolla in un file chiamato <code>MonitorExercise.java</code> e avvia da IDE o terminale.</p>
+
+      <pre><code class="language-java">public class MonitorExercise {
+
+    public static void main(String[] args) throws InterruptedException {
+        A a = new A();
+
+        Thread t1 = new Thread(() -&gt; a.m1(), "T1");
+        Thread t2 = new Thread(() -&gt; a.m2(), "T2");
+
+        t1.start();
+        t2.start();
+
+        t1.join();
+        t2.join();
+
+        System.out.println("\nFINE PROGRAMMA");
+    }
+
+    static class A {
+
+        // TODO (OBIETTIVO):
+        // Fai in modo che m1() e m2() NON si intersechino (niente interleaving).
+        // Suggerimento: devono usare LO STESSO lucchetto.
+
+        public void m1() {
+            System.out.println("&gt;&gt;&gt; m1 START (" + Thread.currentThread().getName() + ")");
+            for (int i = 1; i &lt;= 8; i++) {
+                System.out.println("[m1] step " + i);
+                sleep(120);
+            }
+            System.out.println("&lt;&lt;&lt; m1 END (" + Thread.currentThread().getName() + ")");
+        }
+
+        public void m2() {
+            System.out.println("&gt;&gt;&gt; m2 START (" + Thread.currentThread().getName() + ")");
+            for (int i = 1; i &lt;= 8; i++) {
+                System.out.println("[m2] step " + i);
+                sleep(120);
+            }
+            System.out.println("&lt;&lt;&lt; m2 END (" + Thread.currentThread().getName() + ")");
+        }
+
+        private static void sleep(long ms) {
+            try {
+                Thread.sleep(ms);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+}</code></pre>
+    </section>
+
+    <section class="panel-grid">
+      <article class="card">
+        <h2>Output atteso (Forma A)</h2>
+        <pre><code class="language-text">&gt;&gt;&gt; m1 START (T1)
+[m1] step 1
+...
+[m1] step 8
+&lt;&lt;&lt; m1 END (T1)
+&gt;&gt;&gt; m2 START (T2)
+[m2] step 1
+...
+[m2] step 8
+&lt;&lt;&lt; m2 END (T2)
+FINE PROGRAMMA</code></pre>
+      </article>
+
+      <article class="card">
+        <h2>Output atteso (Forma B)</h2>
+        <pre><code class="language-text">&gt;&gt;&gt; m2 START (T2)
+[m2] step 1
+...
+[m2] step 8
+&lt;&lt;&lt; m2 END (T2)
+&gt;&gt;&gt; m1 START (T1)
+[m1] step 1
+...
+[m1] step 8
+&lt;&lt;&lt; m1 END (T1)
+FINE PROGRAMMA</code></pre>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>💡 Suggerimento (nascosto)</h2>
+      <p class="muted">Clicca “Mostra suggerimento” solo dopo aver provato per 5 minuti.</p>
+
+      <div id="hintBox" class="callout callout--orange" hidden>
+        <p>
+          Se due metodi devono escludersi a vicenda, devono sincronizzarsi sullo <strong>stesso</strong> monitor.
+          In Java, un metodo <code>synchronized</code> di istanza usa il monitor di <code>this</code>.
+        </p>
+        <p>
+          Quindi: fai in modo che <code>m1()</code> e <code>m2()</code> “chiedano la stessa chiave”.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>Thread e sincronizzazione — 4ª Informatica</p>
+  </footer>
+
+  <script>
+    // Toggle suggerimento (indipendente dagli asset)
+    const btnHint = document.getElementById("btnHint");
+    const hintBox = document.getElementById("hintBox");
+
+    btnHint?.addEventListener("click", () => {
+      const hidden = hintBox.hasAttribute("hidden");
+      if (hidden) {
+        hintBox.removeAttribute("hidden");
+        btnHint.textContent = "Nascondi suggerimento";
+        btnHint.setAttribute("aria-expanded", "true");
+      } else {
+        hintBox.setAttribute("hidden", "");
+        btnHint.textContent = "Mostra suggerimento";
+        btnHint.setAttribute("aria-expanded", "false");
+      }
+    });
+  </script>
+</body>
+</html>
