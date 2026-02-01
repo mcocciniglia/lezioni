@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <title>TPSIT — Scheletro: Stampante condivisa con coda limitata</title>
+
+  <!-- CSS comune -->
+  <link rel="stylesheet" href="../../common/assets/style.css" />
+  <link rel="stylesheet" href="../../common/assets/theme.css" />
+  <link rel="stylesheet" href="../../common/assets/prism.css" />
+  <link rel="icon" href="../../common/assets/favicon.svg" type="image/svg+xml" />
+
+  <!-- Script sintassi e tema -->
+  <script src="../../common/assets/prism.js" defer></script>
+  <script src="../../common/assets/theme.js" defer></script>
+
+  <!-- Barra pulsanti fissa -->
+  <style>
+    .top-actions{
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#contenuto">Salta al contenuto</a>
+
+  <!-- Pulsante cambio tema + contrasto (fissi) -->
+  <div class="top-actions">
+    <button id="themeToggle" class="theme-toggle" aria-label="Cambia tema" aria-pressed="false">
+      <span class="btn-label">Tema chiaro</span>
+    </button>
+    <button id="contrastToggle" class="btn-ghost"
+      title="AA/AAA = livelli di contrasto per migliorare la leggibilità (accessibilità)"
+      style="margin-left:.5rem">
+      Contrasto alto 🔆
+    </button>
+  </div>
+
+  <header class="page-header">
+    <div class="container">
+      <p class="pill">TPSIT · Classe quarta · Programmazione concorrente</p>
+      <h1>Stampante condivisa — Scheletro classi</h1>
+      <p class="subtitle">Obiettivo: gestire coda limitata senza busy waiting</p>
+    </div>
+  </header>
+
+  <main id="contenuto" class="container narrow">
+
+    <section class="panel callout">
+      <h2>📌 Istruzioni</h2>
+      <ul>
+        <li>Non cambiare i nomi delle classi e dei metodi.</li>
+        <li>Completa solo le parti <strong>TODO</strong>.</li>
+        <li>Non usare <em>busy waiting</em> (no cicli vuoti per “aspettare”).</li>
+        <li>Il programma deve funzionare anche se eseguito molte volte (ordine casuale).</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>🧠 Suggerimento (senza spoiler)</h2>
+      <p>
+        Qui servono <strong>due cose</strong>:
+      </p>
+      <ul>
+        <li><strong>Mutua esclusione</strong> sulla risorsa condivisa (la coda)</li>
+        <li><strong>Attesa condizionata</strong>: a volte un thread deve aspettare una condizione (<em>coda piena</em> / <em>coda vuota</em>)</li>
+      </ul>
+
+      <details class="tip">
+        <summary>Domanda da tenere a mente</summary>
+        <p>
+          Quando la coda è piena/vuota: chi si ferma? e chi lo risveglia?
+        </p>
+      </details>
+    </section>
+
+    <section class="panel">
+      <h2>📄 Codice da completare</h2>
+
+      <pre class="language-java"><code>import java.util.ArrayDeque;
+import java.util.Deque;
+
+class PrintJob {
+    final String user;
+    final int pages;
+    final long createdAtMs;
+
+    PrintJob(String user, int pages) {
+        this.user = user;
+        this.pages = pages;
+        this.createdAtMs = System.currentTimeMillis();
+    }
+
+    @Override
+    public String toString() {
+        return user + " (" + pages + "p)";
+    }
+}
+
+class SpoolerMonitor {
+
+    private final int capacity;
+    private final Deque&lt;PrintJob&gt; queue;
+
+    // Statistiche (servono per i messaggi, non sono il cuore del problema)
+    private long totalPrintedPages = 0;
+
+    SpoolerMonitor(int capacity) {
+        this.capacity = capacity;
+        this.queue = new ArrayDeque&lt;&gt;();
+    }
+
+    // PRODUCER: utenti che inviano richieste
+    public void submit(PrintJob job) throws InterruptedException {
+        // TODO 1: proteggere l’accesso a queue
+        // TODO 2: se la coda è PIENA, il thread deve aspettare (senza busy waiting)
+        // TODO 3: inserire il job in coda
+        // TODO 4: svegliare chi sta aspettando una nuova richiesta
+    }
+
+    // CONSUMER: stampante che preleva richieste
+    public PrintJob take() throws InterruptedException {
+        // TODO 5: proteggere l’accesso a queue
+        // TODO 6: se la coda è VUOTA, il thread deve aspettare (senza busy waiting)
+        // TODO 7: estrarre un job (scegli FIFO) e ritornarlo
+        // TODO 8: svegliare chi sta aspettando spazio in coda
+        return null; // placeholder
+    }
+
+    // Simula la stampa: NON va sincronizzato per forza, ma occhio allo stato condiviso
+    public void onPrinted(PrintJob job) {
+        // TODO 9 (facoltativo): aggiornare totalPrintedPages in modo corretto
+        // Suggerimento: anche qui c’è uno stato condiviso.
+    }
+
+    public long getTotalPrintedPages() {
+        return totalPrintedPages;
+    }
+
+    public int getQueueSize() {
+        return queue.size();
+    }
+}
+
+class UserClient implements Runnable {
+
+    private final String name;
+    private final SpoolerMonitor spooler;
+
+    UserClient(String name, SpoolerMonitor spooler) {
+        this.name = name;
+        this.spooler = spooler;
+        new Thread(this, "User-" + name).start();
+    }
+
+    @Override
+    public void run() {
+        try {
+            // invio casuale
+            Thread.sleep((int)(Math.random() * 2500));
+
+            int pages = 1 + (int)(Math.random() * 12);
+            PrintJob job = new PrintJob(name, pages);
+
+            spooler.submit(job);
+            System.out.println(Thread.currentThread().getName()
+                    + " -> inviato: " + job
+                    + " | in coda: " + spooler.getQueueSize());
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+class PrinterDevice implements Runnable {
+
+    private final SpoolerMonitor spooler;
+
+    PrinterDevice(SpoolerMonitor spooler) {
+        this.spooler = spooler;
+        new Thread(this, "Printer").start();
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                PrintJob job = spooler.take();
+
+                System.out.println("Printer -> stampa: " + job
+                        + " | in coda: " + spooler.getQueueSize());
+
+                // tempo stampa proporzionale alle pagine
+                Thread.sleep(job.pages * 250L);
+
+                spooler.onPrinted(job);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+public class Laboratorio {
+    public static void main(String[] args) {
+
+        // capienza volutamente piccola per forzare attese
+        SpoolerMonitor spooler = new SpoolerMonitor(3);
+
+        new PrinterDevice(spooler);
+
+        // burst di utenti (più della capienza)
+        new UserClient("Mario", spooler);
+        new UserClient("Giulia", spooler);
+        new UserClient("Luca", spooler);
+        new UserClient("Anna", spooler);
+        new UserClient("Paolo", spooler);
+        new UserClient("Sara", spooler);
+    }
+}</code></pre>
+
+      <details class="warning">
+        <summary>Vincoli tecnici obbligatori</summary>
+        <ul>
+          <li>Non usare <code>Thread.sleep()</code> per “risolvere” la sincronizzazione.</li>
+          <li>Non usare cicli vuoti tipo <code>while(queue.size()==0){}</code>.</li>
+          <li>Se usi attesa/risveglio, ricordati che una condizione va controllata in un <strong>while</strong>, non in un <code>if</code>.</li>
+        </ul>
+      </details>
+
+      <details class="tip">
+        <summary>Output atteso (a grandi linee)</summary>
+        <p>
+          I messaggi devono mostrare invii e stampe in ordine “variabile”.
+          Però non devono mai comparire situazioni impossibili (coda negativa, coda oltre capienza, job duplicati).
+        </p>
+      </details>
+
+    </section>
+
+    <section class="panel exercise">
+      <h2>✍️ Mini-check (per chi finisce prima)</h2>
+      <ol>
+        <li>Fai partire 2 thread <em>PrinterDevice</em> (due stampanti). Cosa cambia?</li>
+        <li>Conta il totale pagine stampate: deve corrispondere alla somma delle pagine inviate.</li>
+        <li>Aggiungi un timeout: se una stampa resta in attesa troppo tempo, stampa un warning.</li>
+      </ol>
+    </section>
+
+    <footer class="small muted">
+      <p>TPSIT · Programmazione concorrente · Scheletro (monitor)</p>
+    </footer>
+
+  </main>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <title>TPSIT — Soluzione: Stampante con slot singolo</title>
+
+  <!-- CSS comune -->
+  <link rel="stylesheet" href="../../common/assets/style.css" />
+  <link rel="stylesheet" href="../../common/assets/theme.css" />
+  <link rel="stylesheet" href="../../common/assets/prism.css" />
+  <link rel="icon" href="../../common/assets/favicon.svg" type="image/svg+xml" />
+
+  <!-- Script sintassi e tema -->
+  <script src="../../common/assets/prism.js" defer></script>
+  <script src="../../common/assets/theme.js" defer></script>
+
+  <style>
+    .top-actions{
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+<a class="skip-link" href="#contenuto">Salta al contenuto</a>
+
+<div class="top-actions">
+  <button id="themeToggle" class="theme-toggle" aria-label="Cambia tema" aria-pressed="false">
+    <span class="btn-label">Tema chiaro</span>
+  </button>
+  <button id="contrastToggle" class="btn-ghost"
+    title="AA/AAA = livelli di contrasto per migliorare la leggibilità (accessibilità)">
+    Contrasto alto 🔆
+  </button>
+</div>
+
+<header class="page-header">
+  <div class="container">
+    <p class="pill">TPSIT · Classe quarta · Programmazione concorrente</p>
+    <h1>Soluzione — Stampante con slot singolo</h1>
+    <p class="subtitle">Monitor con <code>wait()</code> e <code>notifyAll()</code></p>
+  </div>
+</header>
+
+<main id="contenuto" class="container narrow">
+
+  <section class="panel callout">
+    <h2>🎯 Obiettivo della soluzione</h2>
+    <p>
+      Realizzare un sistema corretto di <strong>produttore / consumatore</strong>
+      senza usare code, garantendo:
+    </p>
+    <ul>
+      <li>mutua esclusione</li>
+      <li>attesa condizionata</li>
+      <li>assenza di busy waiting</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>📄 Codice completo</h2>
+
+<pre class="language-java"><code>class PrintJob {
+    final String user;
+    final int pages;
+
+    PrintJob(String user, int pages) {
+        this.user = user;
+        this.pages = pages;
+    }
+
+    @Override
+    public String toString() {
+        return user + " (" + pages + "p)";
+    }
+}
+
+class SpoolerMonitor {
+
+    private PrintJob slot = null;
+    private long totalPrintedPages = 0;
+
+    // PRODUCER
+    public synchronized void submit(PrintJob job) throws InterruptedException {
+
+        while (slot != null) {
+            wait(); // slot occupato → attesa
+        }
+
+        slot = job;
+        notifyAll(); // avvisa la stampante
+    }
+
+    // CONSUMER
+    public synchronized PrintJob take() throws InterruptedException {
+
+        while (slot == null) {
+            wait(); // slot vuoto → attesa
+        }
+
+        PrintJob job = slot;
+        slot = null;
+
+        notifyAll(); // avvisa gli utenti
+        return job;
+    }
+
+    // Stato condiviso: va protetto
+    public synchronized void onPrinted(PrintJob job) {
+        totalPrintedPages += job.pages;
+    }
+
+    public synchronized long getTotalPrintedPages() {
+        return totalPrintedPages;
+    }
+}
+
+class UserClient implements Runnable {
+
+    private final String name;
+    private final SpoolerMonitor spooler;
+
+    UserClient(String name, SpoolerMonitor spooler) {
+        this.name = name;
+        this.spooler = spooler;
+        new Thread(this, "User-" + name).start();
+    }
+
+    @Override
+    public void run() {
+        try {
+            Thread.sleep((int)(Math.random() * 2000));
+
+            int pages = 1 + (int)(Math.random() * 10);
+            PrintJob job = new PrintJob(name, pages);
+
+            spooler.submit(job);
+
+            System.out.println(Thread.currentThread().getName()
+                    + " -> inviato: " + job);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+class PrinterDevice implements Runnable {
+
+    private final SpoolerMonitor spooler;
+
+    PrinterDevice(SpoolerMonitor spooler) {
+        this.spooler = spooler;
+        new Thread(this, "Printer").start();
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                PrintJob job = spooler.take();
+
+                System.out.println("Printer -> stampa: " + job);
+
+                Thread.sleep(job.pages * 250L);
+                spooler.onPrinted(job);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+}
+
+public class Laboratorio {
+    public static void main(String[] args) {
+
+        SpoolerMonitor spooler = new SpoolerMonitor();
+
+        new PrinterDevice(spooler);
+
+        new UserClient("Mario", spooler);
+        new UserClient("Giulia", spooler);
+        new UserClient("Luca", spooler);
+        new UserClient("Anna", spooler);
+        new UserClient("Paolo", spooler);
+    }
+}</code></pre>
+
+  </section>
+
+  <section class="panel">
+    <h2>🧠 Perché funziona</h2>
+    <ul>
+      <li><code>synchronized</code> garantisce la <strong>mutua esclusione</strong></li>
+      <li><code>while</code> gestisce correttamente l’<strong>attesa condizionata</strong></li>
+      <li><code>wait()</code> sospende il thread senza consumare CPU</li>
+      <li><code>notifyAll()</code> risveglia i thread potenzialmente interessati</li>
+    </ul>
+  </section>
+
+  <section class="panel callout">
+    <h2>⚠️ Errori tipici da evidenziare</h2>
+    <ul>
+      <li>Usare <code>if</code> invece di <code>while</code></li>
+      <li>Dimenticare <code>notifyAll()</code></li>
+      <li>Usare <code>sleep()</code> al posto di <code>wait()</code></li>
+      <li>Accedere a <code>totalPrintedPages</code> senza sincronizzazione</li>
+    </ul>
+  </section>
+
+  <section class="panel exercise">
+    <h2>🔍 Estensioni (facoltative)</h2>
+    <ol>
+      <li>Aggiungere una seconda stampante: cosa cambia?</li>
+      <li>Gestire una terminazione pulita del thread stampante</li>
+      <li>Riscrivere la soluzione usando <code>Semaphore</code></li>
+    </ol>
+  </section>
+
+  <footer class="small muted">
+    <p>TPSIT · Programmazione concorrente · Soluzione (monitor)</p>
+  </footer>
+
+</main>
+</body>
+</html>

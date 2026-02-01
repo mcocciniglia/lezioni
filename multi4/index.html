@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <title>TPSIT — Spiegazione: mutua esclusione e cooperazione</title>
+
+  <!-- CSS comune -->
+  <link rel="stylesheet" href="../../common/assets/style.css" />
+  <link rel="stylesheet" href="../../common/assets/theme.css" />
+  <link rel="stylesheet" href="../../common/assets/prism.css" />
+  <link rel="icon" href="../../common/assets/favicon.svg" type="image/svg+xml" />
+
+  <!-- Script sintassi e tema -->
+  <script src="../../common/assets/prism.js" defer></script>
+  <script src="../../common/assets/theme.js" defer></script>
+
+  <style>
+    .top-actions{
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+<a class="skip-link" href="#contenuto">Salta al contenuto</a>
+
+<div class="top-actions">
+  <button id="themeToggle" class="theme-toggle" aria-label="Cambia tema" aria-pressed="false">
+    <span class="btn-label">Tema chiaro</span>
+  </button>
+  <button id="contrastToggle" class="btn-ghost"
+    title="AA/AAA = livelli di contrasto per migliorare la leggibilità (accessibilità)">
+    Contrasto alto 🔆
+  </button>
+</div>
+
+<header class="page-header">
+  <div class="container">
+    <p class="pill">TPSIT · Classe quarta · Programmazione concorrente</p>
+    <h1>Perché <code>synchronized</code> non basta</h1>
+    <p class="subtitle">Mutua esclusione ≠ cooperazione</p>
+  </div>
+</header>
+
+<main id="contenuto" class="container narrow">
+
+  <section class="panel callout">
+    <h2>🎯 Obiettivo di questa pagina</h2>
+    <p>
+      Capire <strong>come ragiona il programma</strong> quando più thread lavorano insieme
+      e perché, in questo problema, non è sufficiente proteggere i metodi con
+      <code>synchronized</code>.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>🔐 Mutua esclusione</h2>
+    <p>
+      La <strong>mutua esclusione</strong> serve a impedire che due thread accedano
+      contemporaneamente alla stessa risorsa condivisa.
+    </p>
+
+    <div class="box">
+      <p>
+        In Java questo si ottiene con <code>synchronized</code>:
+      </p>
+      <ul>
+        <li>un solo thread alla volta entra nella sezione critica</li>
+        <li>gli altri thread restano bloccati <em>fuori</em></li>
+      </ul>
+    </div>
+
+    <p class="muted">
+      Questo evita errori di accesso simultaneo… ma non risolve tutto.
+    </p>
+  </section>
+
+  <section class="panel">
+    <h2>🤝 Cooperazione tra thread</h2>
+    <p>
+      Nel problema della stampante non basta entrare “uno alla volta”.
+    </p>
+
+    <ul>
+      <li>Se lo <strong>slot è pieno</strong>, l’utente non può procedere</li>
+      <li>Se lo <strong>slot è vuoto</strong>, la stampante non può procedere</li>
+    </ul>
+
+    <div class="box">
+      <strong>Domanda chiave:</strong><br>
+      cosa deve fare un thread quando <em>non può continuare</em>?
+    </div>
+  </section>
+
+  <section class="panel callout">
+    <h2>⏸️ Attesa condizionata</h2>
+    <p>
+      Un thread non deve:
+    </p>
+    <ul>
+      <li>continuare a controllare in un ciclo (busy waiting)</li>
+      <li>usare <code>sleep()</code> per “indovinare” quando ripartire</li>
+    </ul>
+
+    <p>
+      Deve invece:
+    </p>
+    <ul>
+      <li><strong>mettersi in attesa</strong> quando la condizione non è vera</li>
+      <li>essere <strong>risvegliato</strong> quando la condizione cambia</li>
+    </ul>
+  </section>
+
+  <section class="panel">
+    <h2>🧠 Il monitor</h2>
+    <p>
+      La classe che gestisce lo slot svolge il ruolo di <strong>monitor</strong>:
+    </p>
+
+    <ul>
+      <li>protegge lo stato condiviso</li>
+      <li>decide chi può procedere e chi deve aspettare</li>
+      <li>coordina produttori e consumatori</li>
+    </ul>
+
+    <details class="tip">
+      <summary>Osservazione importante</summary>
+      <p>
+        Il monitor <strong>non decide l’ordine dei thread</strong>:
+        garantisce solo che il comportamento sia sempre corretto.
+      </p>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>🔁 Perché usare <code>while</code> e non <code>if</code></h2>
+    <p>
+      Quando un thread viene risvegliato, <strong>non è garantito</strong> che
+      la condizione sia ancora valida.
+    </p>
+
+    <div class="box">
+      <p>
+        Per questo motivo:
+      </p>
+      <ul>
+        <li>la condizione va controllata <strong>sempre</strong></li>
+        <li>il controllo va fatto in un <code>while</code></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="panel exercise">
+    <h2>✍️ Domande di verifica (orali o scritte)</h2>
+    <ol>
+      <li>Qual è la differenza tra mutua esclusione e cooperazione?</li>
+      <li>Perché il busy waiting è una cattiva soluzione?</li>
+      <li>In quali casi un thread deve andare in attesa?</li>
+      <li>Perché la condizione va controllata in un <code>while</code>?</li>
+    </ol>
+  </section>
+
+  <footer class="small muted">
+    <p>TPSIT · Programmazione concorrente · Spiegazione guidata</p>
+  </footer>
+
+</main>
+</body>
+</html>
