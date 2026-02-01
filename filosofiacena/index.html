@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="it" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <title>TPSIT — Il problema dei 5 filosofi</title>
+
+  <!-- CSS comune -->
+  <link rel="stylesheet" href="../../common/assets/style.css" />
+  <link rel="stylesheet" href="../../common/assets/theme.css" />
+  <link rel="stylesheet" href="../../common/assets/prism.css" />
+  <link rel="icon" href="../../common/assets/favicon.svg" type="image/svg+xml" />
+
+  <!-- Script sintassi e tema -->
+  <script src="../../common/assets/prism.js" defer></script>
+  <script src="../../common/assets/theme.js" defer></script>
+
+  <style>
+    /* Barra comandi fissa (non scrolla) */
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 999;
+      background: var(--bg);
+      border-bottom: 1px solid var(--panel-border);
+    }
+    .topbar .container{
+      display: flex;
+      justify-content: flex-end;
+      gap: .5rem;
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#contenuto">Vai al contenuto</a>
+
+  <!-- Barra comandi fissa -->
+  <div class="topbar" role="region" aria-label="Comandi pagina">
+    <div class="container">
+      <button id="themeToggle" class="theme-toggle" aria-label="Cambia tema" aria-pressed="false">
+        <span class="btn-label">Tema chiaro ☀️</span>
+      </button>
+
+      <button id="contrastToggle" class="btn-ghost"
+        title="AA/AAA = livelli di contrasto per migliorare la leggibilità (accessibilità)"
+        style="margin-left:.5rem">
+        Contrasto alto 🔆
+      </button>
+    </div>
+  </div>
+
+  <header class="page-header">
+    <div class="container">
+      <h1>Il problema dei 5 filosofi</h1>
+      <p class="subtitle">
+        Concorrente: risorse condivise, deadlock, starvation e una soluzione con semafori (Java).
+      </p>
+      <p class="pill">TPSIT • Classe quarta • 1 ora</p>
+    </div>
+  </header>
+
+  <main id="contenuto" class="container">
+
+    <section class="panel callout">
+      <h2>Obiettivo della lezione</h2>
+      <ul>
+        <li>Capire <strong>perché</strong> alcuni programmi concorrenti possono bloccarsi (deadlock).</li>
+        <li>Riconoscere il rischio di <strong>starvation</strong> (uno aspetta “troppo”).</li>
+        <li>Implementare una soluzione in Java usando <code>Semaphore</code>.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Scenario (modello)</h2>
+      <div class="box">
+        <ul>
+          <li>Ci sono <strong>5 filosofi</strong> seduti in cerchio.</li>
+          <li>Tra ogni coppia di filosofi c’è una <strong>forchetta</strong> (totale 5).</li>
+          <li>Per mangiare servono <strong>2 forchette</strong>: sinistra + destra.</li>
+          <li>Ogni filosofo ripete: <strong>pensa → prende 2 forchette → mangia → rilascia</strong>.</li>
+        </ul>
+      </div>
+
+      <p><strong>Mappatura informatica</strong></p>
+      <ul>
+        <li>Filosofo = <strong>thread</strong></li>
+        <li>Forchetta = <strong>risorsa condivisa</strong> (mutex / semaforo binario)</li>
+        <li>Prendere = <code>acquire()</code>, rilasciare = <code>release()</code></li>
+      </ul>
+    </section>
+
+    <section class="panel warning">
+      <h2>Soluzione “ingenua” e deadlock</h2>
+      <p>Se tutti fanno: “prendo la sinistra, poi la destra”, può accadere che:</p>
+      <ol class="steps">
+        <li>Tutti prendono la forchetta sinistra (ok).</li>
+        <li>Tutti aspettano la destra… ma la destra è già presa dal vicino.</li>
+        <li>Nessuno rilascia (perché sta aspettando). Risultato: <strong>deadlock</strong>.</li>
+      </ol>
+
+      <details class="warning">
+        <summary>Le 4 condizioni del deadlock (Coffman)</summary>
+        <ul>
+          <li><strong>Mutua esclusione</strong>: una forchetta la usa un filosofo alla volta.</li>
+          <li><strong>Hold and wait</strong>: tengo una forchetta e aspetto l’altra.</li>
+          <li><strong>No preemption</strong>: non posso “strappare” una forchetta a qualcuno.</li>
+          <li><strong>Attesa circolare</strong>: l’attesa forma un anello.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="panel">
+      <h2>Soluzione pratica: “maggiordomo” (N−1)</h2>
+      <p>
+        Aggiungiamo un semaforo globale con <strong>4 permessi</strong> (se i filosofi sono 5).
+        Prima di prendere le forchette, un filosofo deve ottenere il permesso dal maggiordomo.
+      </p>
+
+      <div class="box">
+        <p><strong>Perché funziona?</strong> Se al massimo 4 filosofi provano a prendere forchette,
+        non può succedere che 5 tengano ciascuno una forchetta e aspettino l’altra:
+        almeno uno troverà una coppia disponibile e potrà mangiare, “sbloccando” gli altri.</p>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Codice Java (base)</h2>
+
+      <pre class="language-java"><code>import java.util.concurrent.Semaphore;
+
+public class DiningPhilosophers {
+  static final int N = 5;
+
+  public static void main(String[] args) {
+    // Forchette: semafori binari (1 permesso). true = fairness (FIFO) quando possibile.
+    Semaphore[] forks = new Semaphore[N];
+    for (int i = 0; i &lt; N; i++) forks[i] = new Semaphore(1, true);
+
+    // Maggiordomo: N-1 permessi
+    Semaphore waiter = new Semaphore(N - 1, true);
+
+    for (int i = 0; i &lt; N; i++) {
+      int left = i;
+      int right = (i + 1) % N;
+      new Philosopher(i, left, right, forks, waiter).start();
+    }
+  }
+
+  static class Philosopher extends Thread {
+    private final int id, left, right;
+    private final Semaphore[] forks;
+    private final Semaphore waiter;
+
+    Philosopher(int id, int left, int right, Semaphore[] forks, Semaphore waiter) {
+      this.id = id;
+      this.left = left;
+      this.right = right;
+      this.forks = forks;
+      this.waiter = waiter;
+      setName("Philosopher-" + id);
+    }
+
+    @Override public void run() {
+      try {
+        while (!isInterrupted()) {
+          think();
+
+          waiter.acquire();              // chiede permesso al maggiordomo
+          forks[left].acquire();         // prende sinistra
+          forks[right].acquire();        // prende destra
+
+          try {
+            eat();
+          } finally {
+            forks[right].release();
+            forks[left].release();
+            waiter.release();
+          }
+        }
+      } catch (InterruptedException e) {
+        interrupt();
+      }
+    }
+
+    private void think() throws InterruptedException {
+      System.out.println(getName() + " pensa...");
+      Thread.sleep(200);
+    }
+
+    private void eat() throws InterruptedException {
+      System.out.println(getName() + " MANGIA ✅");
+      Thread.sleep(200);
+    }
+  }
+}</code></pre>
+
+      <details class="tip">
+        <summary>Tip: cosa osservare in output</summary>
+        <ul>
+          <li>Il programma continua a stampare “pensa/mangia” senza fermarsi.</li>
+          <li>Non si deve mai bloccare tutto insieme (deadlock).</li>
+          <li>Con <code>fairness=true</code> si riduce il rischio che uno mangi pochissimo.</li>
+        </ul>
+      </details>
+    </section>
+
+    <section class="panel exercise">
+      <h2>Verifica (40 minuti)</h2>
+      <ol>
+        <li><strong>(10’)</strong> Rispondi a 5 domande: deadlock, risorse, hold&amp;wait, attesa circolare, starvation.</li>
+        <li><strong>(30’)</strong> Implementa la simulazione con maggiordomo (N−1) e log chiaro.</li>
+      </ol>
+
+      <div class="box">
+        <p><strong>Consegna su Classroom</strong></p>
+        <ul>
+          <li>Zip: <code>CognomeNome_4X_Filosofi.zip</code></li>
+          <li>Dentro: sorgenti + <code>README.txt</code> (come eseguire + 4 righe di spiegazione)</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer class="small muted">
+      <hr />
+      <p>TPSIT — Programmazione concorrente: gestione di risorse condivise e sincronizzazione.</p>
+    </footer>
+  </main>
+</body>
+</html>
