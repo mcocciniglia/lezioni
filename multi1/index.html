@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <title>TPSIT — Problema: Stampante condivisa con coda limitata</title>
+
+  <!-- CSS comune -->
+  <link rel="stylesheet" href="../../common/assets/style.css" />
+  <link rel="stylesheet" href="../../common/assets/theme.css" />
+  <link rel="stylesheet" href="../../common/assets/prism.css" />
+  <link rel="icon" href="../../common/assets/favicon.svg" type="image/svg+xml" />
+
+  <!-- Script sintassi e tema -->
+  <script src="../../common/assets/prism.js" defer></script>
+  <script src="../../common/assets/theme.js" defer></script>
+
+  <!-- Barra pulsanti fissa -->
+  <style>
+    .top-actions{
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 9999;
+      display: flex;
+      gap: .5rem;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#contenuto">Salta al contenuto</a>
+
+  <!-- Pulsante cambio tema + contrasto (fissi) -->
+  <div class="top-actions">
+    <button id="themeToggle" class="theme-toggle" aria-label="Cambia tema" aria-pressed="false">
+      <span class="btn-label">Tema chiaro</span>
+    </button>
+    <button id="contrastToggle" class="btn-ghost"
+      title="AA/AAA = livelli di contrasto per migliorare la leggibilità (accessibilità)"
+      style="margin-left:.5rem">
+      Contrasto alto 🔆
+    </button>
+  </div>
+
+  <header class="page-header">
+    <div class="container">
+      <p class="pill">TPSIT · Classe quarta · Programmazione concorrente</p>
+      <h1>Stampante condivisa con coda limitata</h1>
+      <p class="subtitle">Problema guidato: mutua esclusione ≠ cooperazione</p>
+    </div>
+  </header>
+
+  <main id="contenuto" class="container narrow">
+
+    <section class="panel callout">
+      <h2>📌 Contesto</h2>
+      <p>
+        Nel laboratorio c’è una <strong>stampante di rete</strong> condivisa.
+        Più utenti possono inviare richieste di stampa <strong>in parallelo</strong>.
+      </p>
+      <p>
+        La stampante può stampare <strong>una richiesta alla volta</strong> e usa una
+        <strong>coda di stampa</strong> con capienza limitata.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>🧩 Specifica del problema</h2>
+      <ul>
+        <li>Le richieste entrano in una <strong>coda</strong> (buffer).</li>
+        <li>La coda ha una <strong>capienza massima</strong> (es. 3 richieste).</li>
+        <li>Una “stampante fisica” consuma le richieste: le stampa e le rimuove dalla coda.</li>
+      </ul>
+
+      <div class="box">
+        <h3 style="margin-top:0">Vincoli da rispettare</h3>
+        <ul>
+          <li>Se la coda è <strong>piena</strong>, un utente che invia una richiesta deve <strong>attendere</strong>.</li>
+          <li>Se la coda è <strong>vuota</strong>, la stampante deve <strong>attendere</strong>.</li>
+          <li>Nessuna richiesta deve essere <strong>persa</strong> o <strong>stampata due volte</strong>.</li>
+          <li>Vietato il <em>busy waiting</em> (niente cicli che “girano” consumando CPU).</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>⚠️ Dove nasce il problema di concorrenza</h2>
+      <p>
+        Più thread (utenti) accedono alla stessa risorsa condivisa (la coda).
+        Se la gestione non è corretta possono comparire:
+      </p>
+      <ul>
+        <li><strong>race condition</strong> (stato incoerente della coda)</li>
+        <li>overflow (inserimenti oltre la capienza)</li>
+        <li>underflow (stampa quando la coda è vuota)</li>
+        <li>richieste <strong>duplicate</strong> o <strong>perse</strong></li>
+      </ul>
+    </section>
+
+    <section class="panel callout">
+      <h2>🧠 Punto chiave</h2>
+      <p><strong>Mutua esclusione</strong> e <strong>cooperazione</strong> non sono la stessa cosa.</p>
+
+      <ul>
+        <li>
+          Con <code>synchronized</code> posso impedire che due thread entrino insieme nella sezione critica
+          (mutua esclusione).
+        </li>
+        <li>
+          Ma qui serve anche decidere <strong>quando</strong> un thread può procedere:
+          se la coda è piena o vuota, qualcuno deve <strong>aspettare</strong> e poi essere <strong>risvegliato</strong>.
+        </li>
+      </ul>
+
+      <details class="tip">
+        <summary>Domanda guida</summary>
+        <p>
+          Se sincronizzo i metodi, <strong>chi dice al thread “aspetta”</strong> quando la coda è piena?
+          E chi lo <strong>risveglia</strong> quando si libera spazio?
+        </p>
+      </details>
+
+      <details class="warning">
+        <summary>Nota importante</summary>
+        <p>
+          La soluzione completa richiede un meccanismo di <strong>attesa/risveglio</strong> (monitor):
+          <code>wait()</code> e <code>notifyAll()</code>.
+        </p>
+      </details>
+    </section>
+
+    <section class="panel exercise">
+      <h2>✍️ Compito</h2>
+      <ol>
+        <li>Progettare le classi (risorsa condivisa + produttori + consumatore).</li>
+        <li>Gestire correttamente i casi <strong>coda piena</strong> e <strong>coda vuota</strong>.</li>
+        <li>Eseguire più volte: l’ordine cambia, ma il comportamento deve restare corretto.</li>
+      </ol>
+    </section>
+
+    <footer class="small muted">
+      <p>TPSIT · Programmazione concorrente · Problema guidato (monitor)</p>
+    </footer>
+
+  </main>
+</body>
+</html>
