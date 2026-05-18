@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Introduzione a Git - TPSIT</title>
+
+  <!-- CSS comune -->
+  <link rel="stylesheet" href="../../common/assets/style.css" />
+  <link rel="stylesheet" href="../../common/assets/theme.css" />
+  <link rel="stylesheet" href="../../common/assets/prism.css" />
+  <link rel="icon" href="../../common/assets/favicon.svg" type="image/svg+xml" />
+
+  <!-- Script sintassi e tema -->
+  <script src="../../common/assets/prism.js" defer></script>
+  <script src="../../common/assets/theme.js" defer></script>
+
+  <style>
+    .top-tools {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: flex-end;
+      gap: .5rem;
+      padding: .75rem 1rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--panel-border);
+      box-shadow: var(--shadow);
+    }
+
+    .lesson-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: 1rem;
+    }
+
+    .meta-chip {
+      border: 1px solid var(--panel-border);
+      background: var(--panel);
+      border-radius: 999px;
+      padding: .35rem .75rem;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .timeline {
+      display: grid;
+      gap: .75rem;
+      margin: 1rem 0;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 1rem;
+      align-items: start;
+      padding: .9rem 1rem;
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      background: var(--bg);
+    }
+
+    .time {
+      font-weight: 800;
+      color: var(--brand);
+    }
+
+    .command-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+    }
+
+    .command-card {
+      background: var(--bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+      padding: 1rem;
+    }
+
+    .repo-flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: .75rem;
+      margin: 1rem 0;
+    }
+
+    .flow-step {
+      text-align: center;
+      padding: 1rem;
+      border-radius: 14px;
+      background: var(--bg);
+      border: 1px solid var(--panel-border);
+      font-weight: 800;
+    }
+
+    .small-note {
+      font-size: .95rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 720px) {
+      .timeline-item {
+        grid-template-columns: 1fr;
+      }
+
+      .top-tools {
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#contenuto">Salta al contenuto</a>
+
+  <!-- Pulsanti cambio tema -->
+  <div class="top-tools" aria-label="Strumenti di visualizzazione">
+    <button id="themeToggle" class="theme-toggle" aria-label="Cambia tema" aria-pressed="false">
+      <span class="btn-label">Tema chiaro</span>
+    </button>
+    <button id="contrastToggle" class="btn-ghost" title="AA/AAA = livelli di contrasto per migliorare la leggibilità (accessibilità)" aria-pressed="false">
+      Contrasto alto 🔆
+    </button>
+  </div>
+
+  <header class="page-header">
+    <div class="container">
+      <p class="pill">TPSIT · Classe quarta · Laboratorio</p>
+      <h1>Introduzione a Git</h1>
+      <p class="subtitle">Perché usare un sistema di controllo versione e come iniziare con i primi comandi.</p>
+
+      <div class="lesson-meta" aria-label="Informazioni sulla lezione">
+        <span class="meta-chip">Durata: 1 ora</span>
+        <span class="meta-chip">Modalità: guidata + pratica</span>
+        <span class="meta-chip">Consegna: Classroom</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="contenuto" class="container">
+    <section class="panel callout">
+      <h2>Obiettivo della lezione</h2>
+      <p>
+        Capire a cosa serve Git, perché è utile nello sviluppo software e realizzare il primo repository locale
+        usando pochi comandi essenziali.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Il problema: troppe versioni dello stesso file</h2>
+      <p>Prima di parlare di Git, osserviamo una situazione molto comune.</p>
+
+<pre><code class="language-text">progetto.html
+progetto_finale.html
+progetto_finale2.html
+progetto_finale_vero.html
+progetto_corretto.html
+progetto_corretto_definitivo.html</code></pre>
+
+      <div class="box">
+        <h3>Domande</h3>
+        <ul>
+          <li>Qual è la versione corretta?</li>
+          <li>Chi ha modificato il file?</li>
+          <li>Quando è stata fatta una modifica?</li>
+          <li>Se il progetto non funziona più, come torno indietro?</li>
+          <li>Come lavoro insieme ad altri senza sovrascrivere il lavoro altrui?</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Che cos'è Git?</h2>
+      <p>
+        Git è un <strong>sistema di controllo versione</strong>. Serve a registrare la storia di un progetto:
+        modifiche, autori, date e motivazioni dei cambiamenti.
+      </p>
+
+      <p>
+        Non è semplicemente un modo per “salvare file”: Git permette di costruire una cronologia ordinata
+        dello sviluppo di un progetto software.
+      </p>
+
+      <div class="repo-flow" aria-label="Flusso semplificato di lavoro con Git">
+        <div class="flow-step">Modifico</div>
+        <div class="flow-step">Controllo</div>
+        <div class="flow-step">Aggiungo</div>
+        <div class="flow-step">Registro</div>
+      </div>
+    </section>
+
+    <section class="panel callout">
+      <h2>Perché Git è spendibile?</h2>
+      <p>
+        Git è uno strumento usato nel mondo del lavoro. È presente nello sviluppo web, nello sviluppo software,
+        nei progetti open source, nella cybersecurity, nell'automazione, nel DevOps e nello sviluppo di applicazioni.
+      </p>
+      <p>
+        Conoscere Git significa saper lavorare in modo più ordinato, professionale e collaborativo.
+      </p>
+
+      <div class="box">
+        <h3>In pratica, Git permette di:</h3>
+        <ul>
+          <li>tenere traccia delle modifiche;</li>
+          <li>recuperare versioni precedenti;</li>
+          <li>lavorare in gruppo;</li>
+          <li>sperimentare senza paura di perdere il lavoro;</li>
+          <li>presentare meglio i propri progetti personali.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Git e GitHub non sono la stessa cosa</h2>
+      <div class="command-grid">
+        <div class="command-card">
+          <h3>Git</h3>
+          <p>È il programma che gestisce le versioni del progetto anche sul proprio computer.</p>
+        </div>
+        <div class="command-card">
+          <h3>GitHub</h3>
+          <p>È una piattaforma online che può ospitare repository Git e facilitare la collaborazione.</p>
+        </div>
+      </div>
+
+      <p class="small-note">
+        In questa prima lezione lavoreremo solo in locale, cioè sul computer del laboratorio.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Parole chiave</h2>
+      <dl>
+        <dt><strong>Repository</strong></dt>
+        <dd>La cartella del progetto controllata da Git.</dd>
+
+        <dt><strong>Commit</strong></dt>
+        <dd>Un salvataggio significativo della situazione del progetto in un certo momento.</dd>
+
+        <dt><strong>Working directory</strong></dt>
+        <dd>La cartella in cui stiamo modificando i file.</dd>
+
+        <dt><strong>Staging area</strong></dt>
+        <dd>La zona in cui prepariamo le modifiche prima del commit.</dd>
+      </dl>
+    </section>
+
+    <section class="panel">
+      <h2>Scansione della lezione</h2>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="time">0-10 min</div>
+          <div>Problema delle versioni multiple e introduzione al controllo versione.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="time">10-20 min</div>
+          <div>Concetti base: repository, commit, cronologia, Git e GitHub.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="time">20-45 min</div>
+          <div>Attività pratica guidata con i primi comandi Git.</div>
+        </div>
+        <div class="timeline-item">
+          <div class="time">45-60 min</div>
+          <div>Mini esercizio individuale e consegna su Classroom.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel exercise">
+      <h2>Attività pratica guidata</h2>
+      <p>Apri il terminale nella cartella di lavoro e segui i passaggi.</p>
+
+      <ol class="steps">
+        <li>
+          <h3>Controlla se Git è installato</h3>
+          <pre><code class="language-bash">git --version</code></pre>
+        </li>
+        <li>
+          <h3>Crea una cartella per la prova</h3>
+          <pre><code class="language-bash">mkdir prova-git
+cd prova-git</code></pre>
+        </li>
+        <li>
+          <h3>Inizializza il repository</h3>
+          <pre><code class="language-bash">git init</code></pre>
+          <p>Da questo momento Git può iniziare a controllare la cartella.</p>
+        </li>
+        <li>
+          <h3>Crea un file</h3>
+          <pre><code class="language-bash">echo "Prima prova con Git" > appunti.txt</code></pre>
+        </li>
+        <li>
+          <h3>Controlla lo stato</h3>
+          <pre><code class="language-bash">git status</code></pre>
+          <p>Git mostra quali file sono nuovi, modificati o pronti per essere registrati.</p>
+        </li>
+        <li>
+          <h3>Aggiungi il file alla staging area</h3>
+          <pre><code class="language-bash">git add appunti.txt</code></pre>
+        </li>
+        <li>
+          <h3>Crea il primo commit</h3>
+          <pre><code class="language-bash">git commit -m "Primo commit"</code></pre>
+        </li>
+        <li>
+          <h3>Visualizza la cronologia</h3>
+          <pre><code class="language-bash">git log</code></pre>
+        </li>
+      </ol>
+    </section>
+
+    <section class="panel warning">
+      <h2>Possibile errore al primo commit</h2>
+      <p>Se Git chiede nome ed email, configurali con questi comandi:</p>
+
+      <pre><code class="language-bash">git config --global user.name "Nome Cognome"
+git config --global user.email "nome.cognome@example.com"</code></pre>
+
+      <p class="small-note">
+        In laboratorio può essere opportuno usare una mail scolastica o un indirizzo indicato dal docente.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Comandi essenziali della lezione</h2>
+      <div class="command-grid">
+        <div class="command-card">
+          <h3><code>git init</code></h3>
+          <p>Crea un nuovo repository Git nella cartella corrente.</p>
+        </div>
+        <div class="command-card">
+          <h3><code>git status</code></h3>
+          <p>Mostra lo stato dei file: nuovi, modificati o pronti per il commit.</p>
+        </div>
+        <div class="command-card">
+          <h3><code>git add</code></h3>
+          <p>Prepara uno o più file per il prossimo commit.</p>
+        </div>
+        <div class="command-card">
+          <h3><code>git commit</code></h3>
+          <p>Registra una versione significativa del progetto.</p>
+        </div>
+        <div class="command-card">
+          <h3><code>git log</code></h3>
+          <p>Mostra la cronologia dei commit.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel exercise">
+      <h2>Lavoro da consegnare su Classroom</h2>
+      <p>Realizza individualmente una prova di repository locale.</p>
+
+      <ol>
+        <li>Crea una cartella chiamata <code>cognome_nome_git</code>.</li>
+        <li>Inizializza Git nella cartella.</li>
+        <li>Crea un file chiamato <code>presentazione.txt</code>.</li>
+        <li>Scrivi nel file tre righe:</li>
+      </ol>
+
+      <pre><code class="language-text">Nome e cognome:
+Classe:
+Per me Git serve a:</code></pre>
+
+      <ol start="5">
+        <li>Esegui il primo commit con messaggio <code>Prima versione presentazione</code>.</li>
+        <li>Modifica il file aggiungendo una quarta riga con una difficoltà incontrata.</li>
+        <li>Esegui un secondo commit con messaggio <code>Aggiunta difficolta</code>.</li>
+        <li>Fai uno screenshot del comando <code>git log</code>.</li>
+        <li>Consegna su Classroom lo screenshot e la cartella compressa in formato <code>.zip</code>.</li>
+      </ol>
+    </section>
+
+    <section class="panel callout">
+      <h2>Obiettivo minimo</h2>
+      <p>Al termine della lezione devi saper spiegare:</p>
+      <ul>
+        <li>che cos'è Git;</li>
+        <li>a cosa serve un repository;</li>
+        <li>cos'è un commit;</li>
+        <li>la differenza tra Git e GitHub;</li>
+        <li>il flusso base: <code>modifica → add → commit</code>.</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <h2>Domande di controllo</h2>
+      <ol>
+        <li>Perché salvare file con nomi diversi non è un vero controllo versione?</li>
+        <li>Che differenza c'è tra Git e GitHub?</li>
+        <li>A cosa serve il comando <code>git status</code>?</li>
+        <li>Che cosa rappresenta un commit?</li>
+        <li>Perché Git è utile nel lavoro di gruppo?</li>
+      </ol>
+    </section>
+
+    <footer class="small muted">
+      <p>Materiale didattico per uso interno. Pagina non indicizzabile dai motori di ricerca.</p>
+    </footer>
+  </main>
+</body>
+</html>
